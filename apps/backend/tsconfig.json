@@ -1,0 +1,21 @@
+{
+    "extends": "@tsconfig/node-lts",
+    "include": ["src", "test"],
+    "files": ["test/test.d.ts"],
+    "compilerOptions": {
+        "declaration": true,
+        "removeComments": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "sourceMap": true,
+        "outDir": "./dist",
+        "incremental": true,
+        "baseUrl": ".",
+        "paths": {
+            "~/*": ["./src/*"]
+        }
+    },
+    "ts-node": {
+        "require": ["tsconfig-paths/register"]
+    }
+}
