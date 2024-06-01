@@ -48,3 +48,7 @@ yarn-error.log*
 # nuxt.js
 **/.nuxt
 **/.output
+
+
+# astah
+**/*.asta.lock
