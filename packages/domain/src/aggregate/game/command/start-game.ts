@@ -1,5 +1,1 @@
-import { Player } from '../entity'
-
-export type StartGameCommandSchema = {
-    players: Player[]
-}
+export type StartGameCommandSchema = null

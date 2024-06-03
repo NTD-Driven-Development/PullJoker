@@ -25,5 +25,7 @@ export type GameStartedEventSchema = {
 
 export type StartGameEventSchema = {
     type: 'start-game'
-    data: { players: { id: string; name: string }[] }
+    data: {
+        players: { id: string; name: string }[]
+    }
 }
