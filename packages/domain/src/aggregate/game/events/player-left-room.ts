@@ -24,6 +24,5 @@ export type LeaveRoomEventSchema = {
     type: 'leave-room'
     data: {
         gameId: GameId
-        player: { id: string; name: string }
     }
 }
