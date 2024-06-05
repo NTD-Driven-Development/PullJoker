@@ -1,14 +1,14 @@
 import { Card } from '../value-object/card'
 
 export class Hands {
-    private readonly cards: Card[] = []
+    private cards: Card[] = []
     constructor() {}
 
     public getCards(): Card[] {
         return this.cards
     }
     public setCards(cards: Card[]): void {
-        this.cards.push(...cards)
+        this.cards = cards
     }
 
     public checkHavingSameRankCards(rank: string): boolean {

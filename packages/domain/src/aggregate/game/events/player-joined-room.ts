@@ -24,6 +24,5 @@ export type JoinRoomEventSchema = {
     type: 'join-room'
     data: {
         gameId: GameId
-        player: { id: string; name: string }
     }
 }

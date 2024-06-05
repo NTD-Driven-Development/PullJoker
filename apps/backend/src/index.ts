@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import dotenv from 'dotenv'
-dotenv.config({ path: `../.env.${process.env.NODE_ENV}` })
+import { config } from 'dotenv'
+config({ path: `../.env.${process.env.NODE_ENV}` })
 import 'reflect-metadata'
 import fastify from 'fastify'
 import socketIO from 'fastify-socket.io'
@@ -9,6 +9,8 @@ import { Server } from '@packages/socket'
 import { Socket } from 'socket.io'
 import { container } from 'tsyringe'
 import { AppDataSource } from './data/data-source'
+import { authMiddleware } from './middlewares'
+import { GameEventHandlers, GameRoutes } from './routes'
 ;(async () => {
     try {
         // import { UserRoutes, RoomRoutes, GameRoutes } from '~/routes'
@@ -18,34 +20,37 @@ import { AppDataSource } from './data/data-source'
         app.get('/api/health', (_, res) => res.send('ok'))
 
         // prefix api
-        // app.register(RoomRoutes, { prefix: '/api/rooms' })
-        // app.register(GameRoutes, { prefix: '/api/games' })
-        // app.register(UserRoutes, { prefix: '/api/users' })
+        app.register(GameRoutes, { prefix: '/api/games' })
 
         // socket.io
         app.register(socketIO, { cors: { origin: '*' } })
+
         app.ready(async (err) => {
             if (err) throw err
-            container.registerInstance(Socket, app.io)
+            container.registerInstance('ServerSocket', app.io)
+            app.io.use(authMiddleware() as any)
 
             app.io.on('connection', (socket: Server) => {
                 container.registerInstance(Socket, socket)
 
-                console.info('Socket connected!', socket.id)
+                console.info('Socket connected!', socket.id, socket.auth.user.id)
 
-                // GameEventHandlers(socket)
+                socket.join(socket.auth.user.id)
+
+                GameEventHandlers(socket)
 
                 socket.on('disconnect', () => console.info('Socket disconnected!', socket.id))
             })
 
             app.io.on('error', (error) => console.error('Socket error:', error))
         })
+
         await AppDataSource.initialize()
         if (AppDataSource.isInitialized) {
             // start server
             app.listen(
                 {
-                    port: Number(process.env.NODE_PORT) || 3001,
+                    port: Number(process.env.NODE_PORT) || 3002,
                     host: process.env.NODE_HOST || '0.0.0.0',
                 },
                 (err, address) => {

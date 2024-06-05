@@ -4,17 +4,18 @@ import { Entity } from './entity'
 
 export abstract class AggregateRoot<ID> implements Entity<ID> {
     private domainEvents: DomainEvent[] = []
-    protected id: ID
+    protected id!: ID
     protected version: number = 1
     constructor(id: ID)
     constructor(events: DomainEvent[])
     constructor(id?: any) {
-        this.id = id
         if (typeof id === 'string') {
             this.id = id as ID
             this.domainEvents = []
         } else if (Array.isArray(id)) {
-            id.forEach((x) => this.apply(x))
+            for (const event of id) {
+                this.apply(event)
+            }
             this.clearDomainEvents()
         }
     }
@@ -24,7 +25,6 @@ export abstract class AggregateRoot<ID> implements Entity<ID> {
     }
 
     public addDomainEvent(event: DomainEvent): void {
-        this.domainEvents = this.domainEvents || []
         this.domainEvents.push(event)
     }
 
@@ -48,7 +48,7 @@ export abstract class AggregateRoot<ID> implements Entity<ID> {
 
     protected ensureInvariant(): void {}
 
-    public apply(event: DomainEvent): void {
+    protected apply(event: DomainEvent): void {
         this.ensureInvariant()
 
         this.when(event)

@@ -20,12 +20,13 @@ export type GameStartedEventSchema = {
         gameId: GameId
         round: number
         players: { id: string; name: string }[]
+        status: GameStatus
     }
 }
 
 export type StartGameEventSchema = {
     type: 'start-game'
     data: {
-        players: { id: string; name: string }[]
+        gameId: GameId
     }
 }

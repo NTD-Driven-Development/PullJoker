@@ -1,6 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AggregateRoot, DomainEvent } from '../../../core'
-import { DrawCardCommandSchema, JoinRoomCommandSchema, LeaveRoomCommandSchema } from '../command'
+import {
+    DrawCardCommandSchema,
+    JoinRoomCommandSchema,
+    LeaveRoomCommandSchema,
+    StartGameCommandSchema,
+} from '../command'
 import {
     GameStarted,
     CardDealt,
@@ -20,28 +25,28 @@ export type GameStatus = 'WAITING' | 'PLAYING' | 'END'
 export class Game extends AggregateRoot<GameId> {
     private static readonly MAX_PLAYERS = 4
     public deck!: Deck
-    public players!: Player[]
-    public currentPlayer: Player | null = null
-    public nextPlayer: Player | null = null
-    public finishedPlayers: Player[] = []
+    public players: Player[] = []
+    public currentPlayer!: Player | null
+    public nextPlayer!: Player | null
+    public finishedPlayers!: Player[]
+    public round!: number
 
     constructor(events: DomainEvent[])
-    constructor(id: GameId, status: GameStatus, round: number)
+    constructor(id: GameId, status: GameStatus)
     constructor(
         id: any,
         protected status: GameStatus = 'WAITING',
-        public round: number = 1,
     ) {
-        super(id)
-    }
-
-    public createRoom(): void {
-        this.apply(
-            new RoomCreated({
-                id: this.id,
-                status: 'WAITING',
-            }),
-        )
+        if (typeof id !== 'string') {
+            super(id)
+            for (const event of id) {
+                this.apply(event)
+            }
+            this.clearDomainEvents()
+        } else {
+            super(id)
+            this.apply(new RoomCreated({ id, status }))
+        }
     }
 
     public joinRoom(payload: JoinRoomCommandSchema): void {
@@ -66,7 +71,11 @@ export class Game extends AggregateRoot<GameId> {
         )
     }
 
-    public start(): void {
+    public start(payload: StartGameCommandSchema): void {
+        // only room member can start the game
+        if (this.players.every((player) => player.getId() !== payload.playerId)) {
+            throw new Error('Only room member can start the game')
+        }
         if (this.players.length !== 4) {
             throw new Error('Game must have 4 players')
         }
@@ -84,7 +93,7 @@ export class Game extends AggregateRoot<GameId> {
 
     private autoPlayCard() {
         this.players.forEach((player) => {
-            if (player.getTwoSameRankCards()) {
+            while (player.getTwoSameRankCards().length > 0) {
                 this.playCard(player, player.getTwoSameRankCards())
             }
         })
@@ -96,9 +105,11 @@ export class Game extends AggregateRoot<GameId> {
         const players = this.players.map((player, index) => {
             const hands = new Hands()
             if (index === Math.floor(Math.random() * Game.MAX_PLAYERS)) {
-                hands.setCards(deck.deal(14))
+                const cards = deck.deal(14)
+                hands.setCards(cards)
             } else {
-                hands.setCards(deck.deal(13))
+                const cards = deck.deal(13)
+                hands.setCards(cards)
             }
             player.setHands(hands)
             return player
@@ -116,9 +127,9 @@ export class Game extends AggregateRoot<GameId> {
     }
 
     private playCard(player: Player, cards: Card[]): void {
-        player.playCards(cards)
         this.apply(
             new CardPlayed({
+                id: this.id,
                 cards: cards,
                 player,
             }),
@@ -169,10 +180,16 @@ export class Game extends AggregateRoot<GameId> {
     protected when(event: DomainEvent): void {
         switch (true) {
             case event instanceof RoomCreated:
+                this.id = event.data.id
                 this.status = event.data.status
+                this.players = []
+                this.currentPlayer = null
+                this.nextPlayer = null
+                this.finishedPlayers = []
+                this.round = 0
                 break
             case event instanceof PlayerJoinedRoom:
-                this.players.push(event.data.player)
+                this.addPlayer(new Player(event.data.player.id, event.data.player.name))
                 break
             case event instanceof PlayerLeftRoom:
                 this.players = this.players.filter(
@@ -180,6 +197,8 @@ export class Game extends AggregateRoot<GameId> {
                 )
                 break
             case event instanceof GameStarted:
+                this.round = event.data.round
+                this.status = event.data.status
                 this.players = event.data.players
                 break
             case event instanceof CardDealt:
@@ -192,7 +211,7 @@ export class Game extends AggregateRoot<GameId> {
             case event instanceof CardPlayed:
                 this.players = this.players.map((player) => {
                     if (player.getId() === event.data.player.getId()) {
-                        return event.data.player
+                        player.playCards(event.data.cards)
                     }
                     return player
                 })
@@ -223,6 +242,10 @@ export class Game extends AggregateRoot<GameId> {
                 this.status = event.data.status
                 break
         }
+    }
+
+    private addPlayer(player: Player) {
+        this.players.push(player)
     }
 
     private checkGameIsOver() {

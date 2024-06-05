@@ -1,7 +1,8 @@
-import dotenv from 'dotenv'
-dotenv.config({ path: `.env.${process.env.NODE_ENV}` })
+import { config } from 'dotenv'
+config({ path: `.env.${process.env.NODE_ENV}` })
 import { DataSource } from 'typeorm'
 import { ClearDatabaseFeatureToggle } from '~/feature-toggle'
+import { EventStore } from './entity'
 
 export const AppDataSource = new DataSource({
     type: process.env.DB_TYPE as 'mariadb' | 'mongodb' | 'mysql' | 'mssql' | 'postgres',
@@ -13,7 +14,7 @@ export const AppDataSource = new DataSource({
     synchronize: true,
     dropSchema: ClearDatabaseFeatureToggle.isEnabled(),
     logging: ['error'],
-    entities: [],
+    entities: [EventStore],
     subscribers: [],
     migrations: [],
     extra: {

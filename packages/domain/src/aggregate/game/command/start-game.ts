@@ -1,1 +1,3 @@
-export type StartGameCommandSchema = null
+export type StartGameCommandSchema = {
+    playerId: string
+}

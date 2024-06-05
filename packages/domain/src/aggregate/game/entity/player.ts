@@ -6,7 +6,7 @@ export class Player implements Entity<string> {
     private hands!: Hands
     public isFinished: boolean = false
     constructor(
-        private id: string,
+        public id: string,
         public name: string,
     ) {}
 
@@ -27,7 +27,7 @@ export class Player implements Entity<string> {
             cards.length !== 2 ||
             this.hands.getCards().length < 2 ||
             cards[0].rank !== cards[1].rank ||
-            cards[0].suit !== cards[1].suit ||
+            cards[0].suit === cards[1].suit ||
             cards[0].rank === 'JOKER_1' ||
             cards[0].rank === 'JOKER_2' ||
             cards[1].rank === 'JOKER_1' ||

@@ -1,0 +1,44 @@
+# version: '3'
+services:
+  db:
+    image: postgres:16-alpine3.19
+    volumes:
+      - db-pj-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pull_joker
+    ports:
+      - "5434:5432"
+    networks:
+      - docker
+  db_test:
+    image: postgres:16-alpine3.19
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: pull_joker_test
+    ports:
+      - "5435:5432"
+    networks:
+      - docker
+
+  # backend:
+  #   image: node:20.12.2-alpine3.19
+  #   volumes:
+  #     - ./backend:/apps/backend
+  #     - ../packages:/packages
+  #   working_dir: /apps/backend
+  #   entrypoint: ["sh", "-c", "npm install && npm run dev"]
+  #   depends_on:
+  #     - db
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - docker
+
+networks: 
+  docker: 
+    driver: bridge
+volumes:
+  db-pj-data:
