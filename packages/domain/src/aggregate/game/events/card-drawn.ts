@@ -1,12 +1,27 @@
-import { Player } from '../entity'
+import { GameId } from '../entity'
 import { DomainEvent } from '../../../core/entity'
 import { Card } from '../value-object'
 
 export type CardDrawnSchema = {
+    id: GameId
     card: Card
     cardIndex: number
-    fromPlayer: Player
-    toPlayer: Player
+    fromPlayer: {
+        id: string
+        name: string
+        hands: {
+            cards?: Card[]
+            cardCount: number
+        }
+    }
+    toPlayer: {
+        id: string
+        name: string
+        hands: {
+            cards?: Card[]
+            cardCount: number
+        }
+    }
 }
 
 export class CardDrawn extends DomainEvent {
@@ -42,6 +57,7 @@ export type CardDrawnEventSchema = {
 export type DrawCardEventSchema = {
     type: 'draw-card'
     data: {
+        gameId: string
         cardIndex: number
         fromPlayerId: string
     }

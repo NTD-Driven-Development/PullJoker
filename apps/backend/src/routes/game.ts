@@ -2,6 +2,7 @@ import { Server } from '@packages/socket'
 import { container } from 'tsyringe'
 import { GameRestController } from '~/game/adapter/game-rest-controller'
 import { GameSocketController } from '~/game/adapter/game-socket-controller'
+import { Event, Socket } from 'socket.io'
 
 import { FastifyInstance, FastifyPluginOptions } from 'fastify'
 export const GameRoutes = (fastify: FastifyInstance, opts: FastifyPluginOptions, done: () => void) => {
@@ -10,14 +11,20 @@ export const GameRoutes = (fastify: FastifyInstance, opts: FastifyPluginOptions,
     done()
 }
 
-export const GameEventHandlers = (socket: Server) => {
+export const GameEventHandlers = (socket: Server) => async (event: Event, next: (err?: Error) => void) => {
+    container.registerInstance(Socket, socket)
     const gameController = container.resolve(GameSocketController)
 
-    socket.on('join-room', async (event) => {
-        await gameController.joinRoom(event, socket.auth.user)
-    })
-
-    socket.on('start-game', async (event) => {
-        await gameController.startGame(event, socket.auth.user)
-    })
+    switch (event[0]) {
+        case 'join-room':
+            await gameController.joinRoom(event[1], socket.auth.user)
+            break
+        case 'start-game':
+            await gameController.startGame(event[1], socket.auth.user)
+            break
+        case 'draw-card':
+            await gameController.drawCard(event[1], socket.auth.user)
+            break
+    }
+    next()
 }

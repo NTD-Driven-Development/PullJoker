@@ -1,4 +1,4 @@
-import { CardDealt, CardPlayed, DomainEvent, GameStarted, PlayerJoinedRoom } from '@packages/domain'
+import { CardDealt, CardDrawn, CardPlayed, DomainEvent, GameStarted, PlayerJoinedRoom } from '@packages/domain'
 import { EventBus } from '~/eventbus/eventbus'
 import { Server } from '@packages/socket'
 import { autoInjectable, inject } from 'tsyringe'
@@ -57,19 +57,19 @@ export class WebSocketEventBus implements EventBus {
             }
             case event instanceof CardDealt: {
                 event.data.players.forEach((EventClient) => {
-                    this.server.to(EventClient.getId()).emit('card-dealt', {
+                    this.server.to(EventClient.id).emit('card-dealt', {
                         type: 'card-dealt' as const,
                         data: {
                             gameId: event.data.id,
                             round: event.data.round,
-                            deck: { cards: event.data.deck.getCards() },
+                            deck: { cards: event.data.deck.cards },
                             currentPlayer: event.data.currentPlayer,
                             nextPlayer: event.data.nextPlayer,
                             players: event.data.players.map((player) => {
-                                const isMe = player.getId() === EventClient.id
-                                const cards = player.getHands().getCards()
+                                const isMe = player.id === EventClient.id
+                                const cards = player.hands.cards || []
                                 return {
-                                    id: player.getId(),
+                                    id: player.id,
                                     name: player.name,
                                     hands: {
                                         cards: isMe ? cards : undefined,
@@ -85,7 +85,7 @@ export class WebSocketEventBus implements EventBus {
             case event instanceof CardPlayed: {
                 const allPlayers = await this.server.in(event.data.id).fetchSockets()
                 const player = event.data.player
-                const cards = player.getHands().getCards()
+                const cards = player.hands.cards || []
                 allPlayers.map((socketClient) => {
                     const isMe = socketClient.rooms.has(player.id)
                     const payload = {
@@ -93,7 +93,7 @@ export class WebSocketEventBus implements EventBus {
                         data: {
                             gameId: event.data.id,
                             player: {
-                                id: player.getId(),
+                                id: player.id,
                                 name: player.name,
                                 hands: {
                                     cards: isMe ? cards : undefined,
@@ -104,6 +104,41 @@ export class WebSocketEventBus implements EventBus {
                         },
                     }
                     this.server.in(socketClient.id).emit('card-played', payload)
+                })
+                break
+            }
+            case event instanceof CardDrawn: {
+                const allPlayers = await this.server.in(event.data.id).fetchSockets()
+                const fromPlayer = event.data.fromPlayer
+                const toPlayer = event.data.toPlayer
+                const fromPlayerCards = fromPlayer.hands.cards || []
+                const toPlayerCards = toPlayer.hands.cards || []
+                allPlayers.map((socketClient) => {
+                    const isMe = socketClient.rooms.has(toPlayer.id) || socketClient.rooms.has(fromPlayer.id)
+                    const payload = {
+                        type: 'card-drawn' as const,
+                        data: {
+                            card: event.data.card,
+                            cardIndex: event.data.cardIndex,
+                            fromPlayer: {
+                                id: fromPlayer.id,
+                                name: fromPlayer.name,
+                                hands: {
+                                    cards: isMe ? fromPlayerCards : undefined,
+                                    cardCount: fromPlayerCards.length,
+                                },
+                            },
+                            toPlayer: {
+                                id: toPlayer.id,
+                                name: toPlayer.name,
+                                hands: {
+                                    cards: isMe ? toPlayerCards : undefined,
+                                    cardCount: toPlayerCards.length,
+                                },
+                            },
+                        },
+                    }
+                    this.server.in(socketClient.id).emit('card-drawn', payload)
                 })
                 break
             }

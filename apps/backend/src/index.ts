@@ -32,12 +32,10 @@ import { GameEventHandlers, GameRoutes } from './routes'
 
             app.io.on('connection', (socket: Server) => {
                 container.registerInstance(Socket, socket)
-
                 console.info('Socket connected!', socket.id, socket.auth.user.id)
-
                 socket.join(socket.auth.user.id)
 
-                GameEventHandlers(socket)
+                socket.use(GameEventHandlers(socket))
 
                 socket.on('disconnect', () => console.info('Socket disconnected!', socket.id))
             })

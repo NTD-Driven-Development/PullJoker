@@ -37,14 +37,10 @@ export class Game extends AggregateRoot<GameId> {
         id: any,
         protected status: GameStatus = 'WAITING',
     ) {
-        if (typeof id !== 'string') {
-            super(id)
-            for (const event of id) {
-                this.apply(event)
-            }
-            this.clearDomainEvents()
+        super(id)
+        if (Array.isArray(id)) {
+            this.applyEvents(id)
         } else {
-            super(id)
             this.apply(new RoomCreated({ id, status }))
         }
     }
@@ -112,14 +108,21 @@ export class Game extends AggregateRoot<GameId> {
                 hands.setCards(cards)
             }
             player.setHands(hands)
-            return player
+            return {
+                id: player.getId(),
+                name: player.name,
+                hands: {
+                    cards: hands.getCards(),
+                    cardCount: hands.getCards().length,
+                },
+            }
         })
         this.apply(
             new CardDealt({
                 id: this.id,
                 round: 1,
-                deck,
-                players,
+                deck: { cards: deck.getCards() },
+                players: players,
                 currentPlayer: players[0],
                 nextPlayer: players[1],
             }),
@@ -131,21 +134,44 @@ export class Game extends AggregateRoot<GameId> {
             new CardPlayed({
                 id: this.id,
                 cards: cards,
-                player,
+                player: {
+                    id: player.getId(),
+                    name: player.name,
+                    hands: {
+                        cards: player.getHands().getCards(),
+                        cardCount: player.getHands().getCards().length,
+                    },
+                },
             }),
         )
     }
 
     public drawCard(payload: DrawCardCommandSchema): void {
+        this.verifyPlayerTurn(payload)
         const fromPlayer = this.findPlayerById(payload.fromPlayerId)
         const toPlayer = this.findPlayerById(payload.toPlayerId)
         const card = toPlayer.drawCard(fromPlayer, payload.cardIndex)
         this.apply(
             new CardDrawn({
+                id: this.id,
                 card: card,
                 cardIndex: payload.cardIndex,
-                fromPlayer,
-                toPlayer,
+                fromPlayer: {
+                    id: fromPlayer.getId(),
+                    name: fromPlayer.name,
+                    hands: {
+                        cards: fromPlayer.getHands().getCards(),
+                        cardCount: fromPlayer.getHands().getCards().length,
+                    },
+                },
+                toPlayer: {
+                    id: toPlayer.getId(),
+                    name: toPlayer.name,
+                    hands: {
+                        cards: toPlayer.getHands().getCards(),
+                        cardCount: toPlayer.getHands().getCards().length,
+                    },
+                },
             }),
         )
         if (fromPlayer.checkHandsEmpty()) {
@@ -166,6 +192,15 @@ export class Game extends AggregateRoot<GameId> {
                     ranking: this.finishedPlayers.length + 1,
                 }),
             )
+        }
+    }
+
+    private verifyPlayerTurn(payload: DrawCardCommandSchema) {
+        if (this.currentPlayer?.getId() !== payload.toPlayerId) {
+            throw new Error('Not your turn')
+        }
+        if (this.nextPlayer?.getId() !== payload.fromPlayerId) {
+            throw new Error('You cannot draw card for this player')
         }
     }
 
@@ -199,18 +234,28 @@ export class Game extends AggregateRoot<GameId> {
             case event instanceof GameStarted:
                 this.round = event.data.round
                 this.status = event.data.status
-                this.players = event.data.players
                 break
             case event instanceof CardDealt:
+                const deck = new Deck()
+                deck.addCards(event.data.deck.cards)
                 this.round = event.data.round
-                this.deck = event.data.deck
-                this.players = event.data.players
-                this.currentPlayer = event.data.currentPlayer
-                this.nextPlayer = event.data.nextPlayer
+                this.deck = deck
+                this.players = event.data.players.map((player) => {
+                    const p = new Player(player.id, player.name)
+                    const h = new Hands()
+                    h.setCards(player.hands.cards || [])
+                    p.setHands(h)
+                    return p
+                })
+                this.currentPlayer = new Player(
+                    event.data.currentPlayer.id,
+                    event.data.currentPlayer.name,
+                )
+                this.nextPlayer = new Player(event.data.nextPlayer.id, event.data.nextPlayer.name)
                 break
             case event instanceof CardPlayed:
                 this.players = this.players.map((player) => {
-                    if (player.getId() === event.data.player.getId()) {
+                    if (player.getId() === event.data.player.id) {
                         player.playCards(event.data.cards)
                     }
                     return player
@@ -219,11 +264,19 @@ export class Game extends AggregateRoot<GameId> {
                 break
             case event instanceof CardDrawn:
                 this.players = this.players.map((player) => {
-                    if (player.getId() === event.data.fromPlayer.getId()) {
-                        return event.data.fromPlayer
+                    if (player.getId() === event.data.fromPlayer.id) {
+                        const p = new Player(event.data.fromPlayer.id, event.data.fromPlayer.name)
+                        const h = new Hands()
+                        h.setCards(event.data.fromPlayer.hands.cards || [])
+                        p.setHands(h)
+                        return p
                     }
-                    if (player.getId() === event.data.toPlayer.getId()) {
-                        return event.data.toPlayer
+                    if (player.getId() === event.data.toPlayer.id) {
+                        const p = new Player(event.data.toPlayer.id, event.data.toPlayer.name)
+                        const h = new Hands()
+                        h.setCards(event.data.toPlayer.hands.cards || [])
+                        p.setHands(h)
+                        return p
                     }
                     return player
                 })

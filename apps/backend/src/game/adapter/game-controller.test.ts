@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {} from '@packages/domain'
+import { Card } from '@packages/domain'
 import { Client } from '@packages/socket'
 import io from 'socket.io-client'
 import app = require('supertest')
@@ -22,8 +22,9 @@ describe('e2e on game-controller', () => {
         並且 A, B, C, D 四位玩家加入遊戲
         玩家 D 發起開始遊戲的請求，
         遊戲已開始，玩家 A, B, C, D 收到遊戲開始的事件與發牌事件。
-        玩家 A, B, C, D 收到出牌事件，且每位玩家擁有的手牌數量皆大於等於 0
-        
+        玩家 A, B, C, D 收到出牌事件，且每位玩家擁有的手牌數量皆大於等於 0。
+        目前玩家 A(Current) 向玩家 B(Next) 抽左手邊第一張牌，並且玩家 A, B 收到抽牌事件。
+
     `, async () => {
         const response = await api.post('/api/games/startGame')
         expect(response.body).toHaveProperty('gameUrl')
@@ -32,13 +33,11 @@ describe('e2e on game-controller', () => {
 
         const { clientA, clientB, clientC, clientD } = givenFourPlayers()
 
-        await Promise.all([
-            // Client A, B, C, D join the game
-            joinRoom(clientA, gameId),
-            joinRoom(clientB, gameId),
-            joinRoom(clientC, gameId),
-            joinRoom(clientD, gameId),
-        ])
+        // Client A, B, C, D join the game
+        await joinRoom(clientA, gameId)
+        await joinRoom(clientB, gameId)
+        await joinRoom(clientC, gameId)
+        await joinRoom(clientD, gameId)
 
         await Promise.all([
             // Client D starts the game,
@@ -59,8 +58,48 @@ describe('e2e on game-controller', () => {
             cardPlayed(clientC, gameId),
             cardPlayed(clientD, gameId),
         ])
+
+        await Promise.all([
+            // A draws a card from B
+            cardDrawn(clientA, gameId, clientB),
+            [cardDrawnToPlayer(clientA, clientB), cardDrawnFromPlayer(clientB, clientA)],
+        ])
     })
 })
+
+function cardDrawn(clientA: Client, gameId: any, clientB: Client): Promise<unknown> {
+    return new Promise((resolve) => {
+        clientA.once('card-drawn', resolve)
+        clientA.emit('draw-card', {
+            type: 'draw-card',
+            data: { gameId, fromPlayerId: (clientB.auth as { [key: string]: any }).id, cardIndex: 0 },
+        })
+    })
+}
+
+function cardDrawnToPlayer(to: Client, from: Client): Promise<unknown> {
+    return new Promise((resolve) => {
+        to.once('card-drawn', (event) => {
+            const card = event.data.card as Card
+            expect(event.data.toPlayer.id).toBe((to.auth as { [key: string]: any }).id)
+            expect(event.data.fromPlayer.id).toBe((from.auth as { [key: string]: any }).id)
+            expect(event.data.toPlayer.hands.cards?.find((c) => c.suit === card.suit && c.rank === card.rank) !== undefined).toBe(true)
+            resolve(true)
+        })
+    })
+}
+
+function cardDrawnFromPlayer(from: Client, to: Client): Promise<unknown> {
+    return new Promise((resolve) => {
+        from.once('card-drawn', (event) => {
+            const card = event.data.card as Card
+            expect(event.data.toPlayer.id).toBe((to.auth as { [key: string]: any }).id)
+            expect(event.data.fromPlayer.id).toBe((from.auth as { [key: string]: any }).id)
+            expect(event.data.fromPlayer.hands.cards?.find((c) => c.suit === card.suit && c.rank === card.rank) === undefined).toBe(true)
+            resolve(true)
+        })
+    })
+}
 
 async function cardPlayed(client: Client, gameId: string) {
     return new Promise((resolve) => {

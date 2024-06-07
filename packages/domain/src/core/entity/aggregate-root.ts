@@ -13,11 +13,15 @@ export abstract class AggregateRoot<ID> implements Entity<ID> {
             this.id = id as ID
             this.domainEvents = []
         } else if (Array.isArray(id)) {
-            for (const event of id) {
-                this.apply(event)
-            }
-            this.clearDomainEvents()
+            this.applyEvents(id)
         }
+    }
+
+    protected applyEvents(events: DomainEvent[]): void {
+        for (const event of events) {
+            this.apply(event)
+        }
+        this.clearDomainEvents()
     }
 
     public getId(): ID {

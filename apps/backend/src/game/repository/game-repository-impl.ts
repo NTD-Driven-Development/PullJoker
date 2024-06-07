@@ -1,15 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     CardDealt,
     CardDrawn,
     CardPlayed,
-    DomainEvent,
     Game,
     GameEnded,
     GameId,
     GameStarted,
-    GameStatus,
     HandsCompleted,
     PlayerJoinedRoom,
     PlayerLeftRoom,
@@ -46,7 +42,6 @@ export class GameRepositoryImpl implements GameRepository {
 
 function toData(game: Game): EventStore[] {
     return game.getDomainEvents().map((event) => {
-        // console.log('event', event, 'gameId', game.getId())
         const data = new EventStore()
         data.aggregateId = game.getId()
         data.eventType = event.getType()

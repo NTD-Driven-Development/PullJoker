@@ -1,14 +1,29 @@
-import { Deck, GameId, Player } from '../entity'
+import { GameId } from '../entity'
 import { DomainEvent } from '../../../core/entity'
 import { Card } from '../value-object'
 
 export type CardDealtSchema = {
     id: GameId
     round: number
-    deck: Deck
-    players: Player[]
-    currentPlayer: Player
-    nextPlayer: Player
+    deck: {
+        cards: Card[]
+    }
+    players: {
+        id: string
+        name: string
+        hands: {
+            cards?: Card[]
+            cardCount: number
+        }
+    }[]
+    currentPlayer: {
+        id: string
+        name: string
+    }
+    nextPlayer: {
+        id: string
+        name: string
+    }
 }
 
 export class CardDealt extends DomainEvent {
@@ -33,7 +48,13 @@ export type CardDealtEventSchema = {
                 cardCount: number
             }
         }[]
-        currentPlayer: Player
-        nextPlayer: Player
+        currentPlayer: {
+            id: string
+            name: string
+        }
+        nextPlayer: {
+            id: string
+            name: string
+        }
     }
 }
