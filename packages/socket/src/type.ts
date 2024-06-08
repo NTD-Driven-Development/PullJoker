@@ -6,6 +6,9 @@ import {
     DrawCardEventSchema,
     GameEndedEventSchema,
     GameStartedEventSchema,
+    GetGameResultEventSchema,
+    GetMyStatusEventSchema,
+    GetMyStatusResultEventSchema,
     HandsCompletedEventSchema,
     JoinRoomEventSchema,
     LeaveRoomEventSchema,
@@ -28,6 +31,8 @@ interface ServerToClientEvents {
     'card-played': (event: CardPlayedEventSchema) => void
     'hands-completed': (event: HandsCompletedEventSchema) => void
     'game-ended': (event: GameEndedEventSchema) => void
+    'get-game-result': (event: GetGameResultEventSchema) => void
+    'get-my-status-result': (event: GetMyStatusResultEventSchema) => void
 }
 
 interface ClientToServerEvents {
@@ -36,6 +41,7 @@ interface ClientToServerEvents {
     'leave-room': (event: LeaveRoomEventSchema) => void
     'start-game': (event: StartGameEventSchema) => void
     'draw-card': (event: DrawCardEventSchema) => void
+    'get-my-status': (event: GetMyStatusEventSchema) => void
 }
 
 export type Server = BaseServer<ClientToServerEvents, ServerToClientEvents>

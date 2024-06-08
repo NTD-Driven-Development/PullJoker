@@ -12,6 +12,7 @@ declare global {
             DB_NAME: string
             AUTH0_DOMAIN: string
             AUTH0_AUDIENCE: string
+            FRONTEND_URL: string
         }
     }
 }

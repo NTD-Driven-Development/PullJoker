@@ -48,9 +48,16 @@ export class Game extends AggregateRoot<GameId> {
         }
     }
 
+    public getGameStatus(): GameStatus {
+        return this.status
+    }
+
     public joinRoom(payload: JoinRoomCommandSchema): void {
         if (this.players.length >= Game.MAX_PLAYERS) {
             throw new Error('Room is full')
+        }
+        if (this.players.some((player) => player.getId() === payload.playerId)) {
+            throw new Error('Player already in room')
         }
         this.apply(
             new PlayerJoinedRoom({

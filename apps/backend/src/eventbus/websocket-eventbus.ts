@@ -37,6 +37,13 @@ export class WebSocketEventBus implements EventBus {
                 this.socket.join(event.data.id)
                 this.socket.in(event.data.id).emit('player-joined-room', payload)
                 this.socket.emit('player-joined-room', payload)
+                this.socket.auth = {
+                    user: {
+                        id: event.data.player.getId(),
+                        name: event.data.player.name,
+                        gameId: event.data.id,
+                    },
+                }
                 break
             }
             case event instanceof GameStarted: {

@@ -5,6 +5,7 @@ config()
 export interface AuthUser {
     id: string
     name: string
+    gameId?: string
 }
 
 declare module 'socket.io' {
@@ -18,7 +19,7 @@ declare module 'socket.io' {
 type SocketIOMiddlewareFactory = (domain?: string, audience?: string) => (socket: Server, next: (err?: Error) => void) => void
 
 export const authMiddleware: SocketIOMiddlewareFactory = (domainParam?: string, audienceParam?: string) => {
-    return async function (socket, next) {
+    return function (socket, next) {
         const { playerId, playerName } = socket.handshake.query
         const { id, name } = socket.handshake.auth
         const player = {

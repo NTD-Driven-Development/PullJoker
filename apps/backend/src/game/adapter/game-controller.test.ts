@@ -28,7 +28,7 @@ describe('e2e on game-controller', () => {
         直到只剩下一位玩家，則遊戲結束。
 
     `, async () => {
-        const response = await api.post('/api/games/startGame')
+        const response = await api.post('/api/startGame')
         expect(response.body).toHaveProperty('gameUrl')
         expect(response.body).toHaveProperty('gameId')
         const gameId = response.body.gameId
@@ -97,7 +97,7 @@ describe('e2e on game-controller', () => {
             if (finishedPlayers.length === playerCount - 1 || currentPlayer === null || nextPlayer === null) {
                 break
             } else {
-                await new Promise((resolve) => setTimeout(resolve, 1))
+                await new Promise((resolve) => setTimeout(resolve, 10))
             }
         }
     })
