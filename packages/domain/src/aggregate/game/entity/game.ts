@@ -101,9 +101,10 @@ export class Game extends AggregateRoot<GameId> {
     private initDeckAndDeal(): void {
         const deck = new Deck()
         deck.newDeck()
+        const randomIndex = Math.floor(Math.random() * Game.MAX_PLAYERS)
         const players = this.players.map((player, index) => {
             const hands = new Hands()
-            if (index === Math.floor(Math.random() * Game.MAX_PLAYERS)) {
+            if (index === randomIndex) {
                 const cards = deck.deal(14)
                 hands.setCards(cards)
             } else {
@@ -151,7 +152,6 @@ export class Game extends AggregateRoot<GameId> {
     }
 
     public drawCard(payload: DrawCardCommandSchema): void {
-        console.log('drawCard', payload)
         this.verifyPlayerTurn(payload)
         const fromPlayer = this.findPlayerById(payload.fromPlayerId)
         const toPlayer = this.findPlayerById(payload.toPlayerId)
@@ -312,8 +312,8 @@ export class Game extends AggregateRoot<GameId> {
                     }
                     return player
                 })
-                this.currentPlayer = this.nextPlayer
-                this.nextPlayer = this.toNextPlayer()
+                this.currentPlayer = this.toCurrentPlayer(this.currentPlayer)
+                this.nextPlayer = this.toNextPlayer(this.currentPlayer)
                 this.round =
                     this.players[0].getId() === this.currentPlayer?.getId()
                         ? this.round + 1
@@ -321,14 +321,10 @@ export class Game extends AggregateRoot<GameId> {
                 break
             case event instanceof HandsCompleted:
                 if (this.currentPlayer?.id === event.data.player.id) {
-                    this.currentPlayer =
-                        this.players.find(
-                            (player) => player.getId() === this.nextPlayer?.getId(),
-                        ) || null
-                    this.nextPlayer = this.toNextPlayer()
-                }
-                if (this.nextPlayer?.id === event.data.player.id) {
-                    this.nextPlayer = this.toNextPlayer()
+                    this.currentPlayer = this.toCurrentPlayer(this.currentPlayer)
+                    this.nextPlayer = this.toNextPlayer(this.currentPlayer)
+                } else if (this.nextPlayer?.id === event.data.player.id) {
+                    this.nextPlayer = this.toNextPlayer(this.currentPlayer)
                 }
                 this.addFinishPlayer(event.data.player.id, event.data.player.name)
                 break
@@ -365,13 +361,28 @@ export class Game extends AggregateRoot<GameId> {
         }
     }
 
-    private toNextPlayer(): Player | null {
+    private toCurrentPlayer(originCurrent: Player | null): Player | null {
+        const beforeCurrent = this.players.findIndex(
+            (player) => player.getId() === originCurrent?.getId(),
+        )
+        for (let i = 1; i < Game.MAX_PLAYERS; i++) {
+            const current = (beforeCurrent + i) % Game.MAX_PLAYERS
+            if (
+                !this.finishedPlayers.some((player) => player.id === this.players[current].getId())
+            ) {
+                return this.players[current]
+            }
+        }
+        return null
+    }
+
+    private toNextPlayer(originNext: Player | null): Player | null {
         const beforeNext = this.players.findIndex(
-            (player) => player.getId() === this.nextPlayer?.id,
+            (player) => player.getId() === originNext?.getId(),
         )
         for (let i = 1; i < Game.MAX_PLAYERS; i++) {
             const next = (beforeNext + i) % Game.MAX_PLAYERS
-            if (!this.players[next].checkHandsEmpty()) {
+            if (!this.finishedPlayers.some((player) => player.id === this.players[next].getId())) {
                 return this.players[next]
             }
         }

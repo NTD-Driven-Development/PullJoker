@@ -21,6 +21,7 @@ export class WebSocketEventBus implements EventBus {
     }
 
     private async handle(event: DomainEvent) {
+        console.log('event', event.getType())
         switch (true) {
             case event instanceof PlayerJoinedRoom: {
                 const payload = {

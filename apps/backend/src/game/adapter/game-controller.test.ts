@@ -94,10 +94,10 @@ describe('e2e on game-controller', () => {
 
             currentPlayer = toCurrentPlayer(cp, players, playerCount, finishedPlayers) as Client
             nextPlayer = toNextPlayer(currentPlayer, players, playerCount, finishedPlayers) as Client
-            if (finishedPlayers.length === playerCount - 1) {
+            if (finishedPlayers.length === playerCount - 1 || currentPlayer === null || nextPlayer === null) {
                 break
             } else {
-                await new Promise((resolve) => setTimeout(resolve, 10))
+                await new Promise((resolve) => setTimeout(resolve, 1))
             }
         }
     })

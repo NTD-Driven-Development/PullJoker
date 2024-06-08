@@ -23,13 +23,20 @@ export class GameRepositoryImpl implements GameRepository {
     public constructor() {
         this.repo = AppDataSource.getRepository(EventStore)
     }
+
+    private async getLastVersion(id: GameId): Promise<number> {
+        const events = await this.repo.find({ where: { aggregateId: id } })
+        return events.length
+    }
+
     public async from(id: GameId): Promise<Game> {
         const events = await this.repo.find({ where: { aggregateId: id } })
         return toDomain(events)
     }
 
     public async save(aggregate: Game): Promise<void> {
-        await this.repo.save(toData(aggregate))
+        const version = await this.getLastVersion(aggregate.getId())
+        await this.repo.save(toData(aggregate, version))
     }
 
     public findById(id: string): Promise<Game> {
@@ -40,12 +47,14 @@ export class GameRepositoryImpl implements GameRepository {
     }
 }
 
-function toData(game: Game): EventStore[] {
+function toData(game: Game, lastVersion: number): EventStore[] {
+    let version = lastVersion + 1
     return game.getDomainEvents().map((event) => {
         const data = new EventStore()
         data.aggregateId = game.getId()
         data.eventType = event.getType()
         data.eventData = event.getData()
+        data.version = version++
         data.occurredOn = event.getOccurredOn()
         return data
     })

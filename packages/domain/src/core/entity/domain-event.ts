@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid'
 export abstract class DomainEvent {
     private readonly id: string
     private readonly occurredOn: Date
-    // protected readonly version: number
+    protected version: number = 1
     public readonly type: string
     public readonly data: any
 
@@ -30,7 +30,11 @@ export abstract class DomainEvent {
         return this.data
     }
 
-    // public getVersion(): number {
-    //     return this.version
-    // }
+    public setVersion(version: number): void {
+        this.version = version
+    }
+
+    public getVersion(): number {
+        return this.version
+    }
 }
