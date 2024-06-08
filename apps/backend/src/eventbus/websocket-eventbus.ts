@@ -1,4 +1,4 @@
-import { CardDealt, CardDrawn, CardPlayed, DomainEvent, GameStarted, PlayerJoinedRoom } from '@packages/domain'
+import { CardDealt, CardDrawn, CardPlayed, DomainEvent, GameEnded, GameStarted, HandsCompleted, PlayerJoinedRoom } from '@packages/domain'
 import { EventBus } from '~/eventbus/eventbus'
 import { Server } from '@packages/socket'
 import { autoInjectable, inject } from 'tsyringe'
@@ -140,6 +140,30 @@ export class WebSocketEventBus implements EventBus {
                     }
                     this.server.in(socketClient.id).emit('card-drawn', payload)
                 })
+                break
+            }
+            case event instanceof HandsCompleted: {
+                const payload = {
+                    type: 'hands-completed' as const,
+                    data: {
+                        gameId: event.data.id,
+                        playerId: event.data.player.id,
+                        ranking: event.data.ranking,
+                    },
+                }
+                this.server.in(event.data.id).emit('hands-completed', payload)
+                break
+            }
+            case event instanceof GameEnded: {
+                const payload = {
+                    type: 'game-ended' as const,
+                    data: {
+                        id: event.data.id,
+                        status: event.data.status,
+                        ranking: event.data.ranking,
+                    },
+                }
+                this.server.in(event.data.id).emit('game-ended', payload)
                 break
             }
             default:

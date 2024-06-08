@@ -27,7 +27,7 @@ interface ServerToClientEvents {
     'card-dealt': (event: CardDealtEventSchema) => void
     'card-played': (event: CardPlayedEventSchema) => void
     'hands-completed': (event: HandsCompletedEventSchema) => void
-    'game-end': (event: GameEndedEventSchema) => void
+    'game-ended': (event: GameEndedEventSchema) => void
 }
 
 interface ClientToServerEvents {

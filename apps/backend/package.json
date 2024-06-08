@@ -20,7 +20,7 @@
         "node": ">=16.0.0"
     },
     "jest": {
-        "testTimeout": 3000,
+        "testTimeout": 10000,
         "globals": {
             "ts-jest": {
                 "tsconfig": "./tsconfig.json"

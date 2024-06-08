@@ -23,7 +23,9 @@ describe('e2e on game-controller', () => {
         玩家 D 發起開始遊戲的請求，
         遊戲已開始，玩家 A, B, C, D 收到遊戲開始的事件與發牌事件。
         玩家 A, B, C, D 收到出牌事件，且每位玩家擁有的手牌數量皆大於等於 0。
-        目前玩家 A(Current) 向玩家 B(Next) 抽左手邊第一張牌，並且玩家 A, B 收到抽牌事件。
+        目前玩家 B(Next) 向玩家 A(Current) 抽左手邊第一張牌，並且玩家 A, B 收到抽牌事件。
+        依序由 C > D > A > B 抽牌，若玩家手牌數量為 0 則接收到手牌完成事件。
+        直到只剩下一位玩家，則遊戲結束。
 
     `, async () => {
         const response = await api.post('/api/games/startGame')
@@ -60,58 +62,121 @@ describe('e2e on game-controller', () => {
         ])
 
         await Promise.all([
-            // A draws a card from B
-            cardDrawn(clientA, gameId, clientB),
-            [cardDrawnToPlayer(clientA, clientB), cardDrawnFromPlayer(clientB, clientA)],
+            // B draws a card from A
+            cardDrawn(clientB, gameId, clientA),
+            [cardDrawnToPlayer(clientB, clientA), cardDrawnFromPlayer(clientA, clientB)],
         ])
+
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        const players = [clientB, clientC, clientD, clientA]
+        const finishedPlayers: string[] = []
+        let currentPlayer = clientB
+        let nextPlayer: Client = clientC
+        let rank = 1
+        clientA.on('hands-completed', (event) => {
+            expect(event.data.ranking).toBe(rank)
+            rank++
+            finishedPlayers.push(event.data.playerId)
+        })
+        clientA.once('game-ended', (event) => {
+            expect(event.data.ranking.length).toBe(4)
+        })
+        while (true) {
+            const playerCount = players.length
+            const cp = currentPlayer
+            const np = nextPlayer
+
+            await Promise.all([
+                // C draws a card from B
+                cardDrawn(np, gameId, cp),
+                [cardDrawnToPlayer(np, cp), cardDrawnFromPlayer(cp, np)],
+            ])
+
+            currentPlayer = toCurrentPlayer(cp, players, playerCount, finishedPlayers) as Client
+            nextPlayer = toNextPlayer(currentPlayer, players, playerCount, finishedPlayers) as Client
+            if (finishedPlayers.length === playerCount - 1) {
+                break
+            } else {
+                await new Promise((resolve) => setTimeout(resolve, 10))
+            }
+        }
     })
 })
 
-function cardDrawn(clientA: Client, gameId: any, clientB: Client): Promise<unknown> {
+function toCurrentPlayer(originCurrent: Client, players: Client[], playerCount: number, finishedPlayers: string[]) {
+    const beforeCurrent = players.findIndex(
+        (player) => (player.auth as { [key: string]: any })?.id === (originCurrent.auth as { [key: string]: any })?.id,
+    )
+    for (let i = 1; i < playerCount; i++) {
+        const current = (beforeCurrent + i) % playerCount
+        if (!finishedPlayers.includes((players[current]?.auth as { [key: string]: any })?.id)) {
+            return players[current]
+        }
+    }
+    return null
+}
+
+function toNextPlayer(originNext: Client, players: Client[], playerCount: number, finishedPlayers: string[]) {
+    const beforeNext = players.findIndex(
+        (player) => (player.auth as { [key: string]: any })?.id === (originNext?.auth as { [key: string]: any })?.id,
+    )
+    for (let i = 1; i < playerCount; i++) {
+        const next = (beforeNext + i) % playerCount
+        if (!finishedPlayers.includes((players[next].auth as { [key: string]: any })?.id)) {
+            return players[next]
+        }
+    }
+    return null
+}
+
+function cardDrawn(to: Client, gameId: any, from: Client, cardIndex: number = 0): Promise<unknown> {
     return new Promise((resolve) => {
-        clientA.once('card-drawn', resolve)
-        clientA.emit('draw-card', {
+        to.once('card-drawn', resolve)
+        to.emit('draw-card', {
             type: 'draw-card',
-            data: { gameId, fromPlayerId: (clientB.auth as { [key: string]: any }).id, cardIndex: 0 },
+            data: { gameId, fromPlayerId: (from.auth as { [key: string]: any }).id, cardIndex: Math.floor(Math.random() * cardIndex) },
         })
     })
 }
 
-function cardDrawnToPlayer(to: Client, from: Client): Promise<unknown> {
+function cardDrawnToPlayer(to: Client, from: Client): Promise<number> {
     return new Promise((resolve) => {
         to.once('card-drawn', (event) => {
             const card = event.data.card as Card
             expect(event.data.toPlayer.id).toBe((to.auth as { [key: string]: any }).id)
             expect(event.data.fromPlayer.id).toBe((from.auth as { [key: string]: any }).id)
             expect(event.data.toPlayer.hands.cards?.find((c) => c.suit === card.suit && c.rank === card.rank) !== undefined).toBe(true)
-            resolve(true)
+            resolve(event.data.toPlayer.hands.cardCount)
         })
     })
 }
 
-function cardDrawnFromPlayer(from: Client, to: Client): Promise<unknown> {
+function cardDrawnFromPlayer(from: Client, to: Client): Promise<number> {
     return new Promise((resolve) => {
         from.once('card-drawn', (event) => {
             const card = event.data.card as Card
             expect(event.data.toPlayer.id).toBe((to.auth as { [key: string]: any }).id)
             expect(event.data.fromPlayer.id).toBe((from.auth as { [key: string]: any }).id)
             expect(event.data.fromPlayer.hands.cards?.find((c) => c.suit === card.suit && c.rank === card.rank) === undefined).toBe(true)
-            resolve(true)
+            resolve(event.data.toPlayer.hands.cardCount)
         })
     })
 }
 
-async function cardPlayed(client: Client, gameId: string) {
+async function cardPlayed(client: Client, gameId: string): Promise<number> {
     return new Promise((resolve) => {
         client.once('card-played', (event) => {
-            if (event.data.player.id === (client.auth as { [key: string]: any }).id) {
-                expect(event.data.player.hands.cards?.length).toBeGreaterThanOrEqual(0)
+            const cards = event.data.cards as Card[]
+            const player = event.data.player
+            if (player.id === (client.auth as { [key: string]: any }).id) {
+                expect(player.hands.cards?.length).toBeGreaterThanOrEqual(0)
+                expect(player.hands.cards?.find((c) => cards.find((card) => card.suit === c.suit && card.rank === c.rank))).toBeUndefined()
             } else {
-                expect(event.data.player.hands.cardCount).toBeGreaterThanOrEqual(0)
+                expect(player.hands.cardCount).toBeGreaterThanOrEqual(0)
             }
             expect(event.data.gameId).toBe(gameId)
             expect(event.data.cards.length).toBe(2)
-            resolve(true)
+            resolve(player.hands.cardCount)
         })
     })
 }

@@ -1,8 +1,16 @@
-import { Player } from '../entity'
 import { DomainEvent } from '../../../core/entity'
+import { Card } from '../value-object'
 
 export type HandsCompletedSchema = {
-    player: Player
+    id: string
+    player: {
+        id: string
+        name: string
+        hands: {
+            cards: Card[]
+            cardCount: number
+        }
+    }
     ranking: number
 }
 
@@ -15,6 +23,7 @@ export class HandsCompleted extends DomainEvent {
 export type HandsCompletedEventSchema = {
     type: 'hands-completed'
     data: {
+        gameId: string
         playerId: string
         ranking: number
     }

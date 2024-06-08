@@ -1,6 +1,7 @@
-import { DrawCardCommandSchema, UseCase } from '@packages/domain'
+import { DrawCardCommandSchema, Player, UseCase } from '@packages/domain'
 import { autoInjectable, inject } from 'tsyringe'
 import { EventBus, WebSocketEventBus } from '~/eventbus'
+import { DrawRandomCardFeatureToggle } from '~/feature-toggle/draw-random-card-feature-toggle'
 import { GameRepository, GameRepositoryImpl } from '~/game/repository'
 
 export type DrawCardInput = DrawCardCommandSchema & { gameId: string }
@@ -16,6 +17,9 @@ export class DrawCardUseCase implements UseCase<DrawCardInput, void> {
 
     async execute(input: DrawCardInput): Promise<void> {
         const game = await this.gameRepository.from(input.gameId)
+        if (DrawRandomCardFeatureToggle.isEnabled()) {
+            input.cardIndex = Math.floor(Math.random() * (game.currentPlayer as Player)?.getHands()?.getCards()?.length || 0)
+        }
         game.drawCard({
             fromPlayerId: input.fromPlayerId,
             toPlayerId: input.toPlayerId,

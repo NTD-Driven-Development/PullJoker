@@ -18,8 +18,15 @@ export class Player implements Entity<string> {
         if (this.checkPlayCardInvariant(cards)) {
             throw new Error('Invalid cards')
         }
+        if (this.checkCardsInHands(cards)) {
+            throw new Error('Cards not in hands')
+        }
         const cardPlayed = this.hands.getCards().filter((card) => !cards.includes(card))
         this.hands.setCards(cardPlayed)
+    }
+
+    private checkCardsInHands(cards: Card[]): boolean {
+        return cards.some((card) => !this.hands.getCards().includes(card))
     }
 
     private checkPlayCardInvariant(cards: Card[]) {
@@ -57,6 +64,10 @@ export class Player implements Entity<string> {
 
     public setHands(hands: Hands): void {
         this.hands = hands
+    }
+
+    public haveTwoSameRankCards(): boolean {
+        return this.getTwoSameRankCards().length === 2
     }
 
     public getTwoSameRankCards(): Card[] {
