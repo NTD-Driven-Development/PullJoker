@@ -21,9 +21,10 @@ import { Player } from './player'
 
 export type GameId = string
 export type GameStatus = 'WAITING' | 'PLAYING' | 'END'
+export const MAX_PLAYERS_LENGTH = 4
 
 export class Game extends AggregateRoot<GameId> {
-    private static readonly MAX_PLAYERS = 4
+    private static readonly MAX_PLAYERS = MAX_PLAYERS_LENGTH
     public deck!: Deck
     public players: Player[] = []
     public currentPlayer!: Player | null
@@ -141,11 +142,15 @@ export class Game extends AggregateRoot<GameId> {
     }
 
     private playCard(player: Player, cards: Card[]): void {
+        const playerCardPlayed = player
+            .getHands()
+            .getCards()
+            .filter((card) => cards.includes(card))
         player.playCards(cards)
         this.apply(
             new CardPlayed({
                 id: this.id,
-                cards: cards,
+                cards: playerCardPlayed,
                 player: {
                     id: player.getId(),
                     name: player.name,

@@ -1,5 +1,5 @@
 import { DomainEvent } from '../../../core'
-import { GameId, GameStatus } from '../entity'
+import { GameId, GameStatus, HandCards } from '../entity'
 import { Card } from '../value-object'
 
 export type GetGameResultSchema = {
@@ -11,7 +11,7 @@ export type GetGameResultSchema = {
               id: string
               name: string
               hands: {
-                  cards?: Card[]
+                  cards?: HandCards[]
                   cardCount: number
               } | null
           }[]

@@ -12,7 +12,7 @@ export type CardDealtSchema = {
         id: string
         name: string
         hands: {
-            cards?: Card[]
+            cards?: HandCards[]
             cardCount: number
         }
     }[]
@@ -44,7 +44,7 @@ export type CardDealtEventSchema = {
             id: string
             name: string
             hands: {
-                cards?: Card[]
+                cards?: HandCards[]
                 cardCount: number
             }
         }[]

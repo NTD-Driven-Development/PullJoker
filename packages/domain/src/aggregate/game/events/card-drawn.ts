@@ -1,4 +1,4 @@
-import { GameId } from '../entity'
+import { GameId, HandCards } from '../entity'
 import { DomainEvent } from '../../../core/entity'
 import { Card } from '../value-object'
 
@@ -10,7 +10,7 @@ export type CardDrawnSchema = {
         id: string
         name: string
         hands: {
-            cards?: Card[]
+            cards?: HandCards[]
             cardCount: number
         }
     }
@@ -18,7 +18,7 @@ export type CardDrawnSchema = {
         id: string
         name: string
         hands: {
-            cards?: Card[]
+            cards?: HandCards[]
             cardCount: number
         }
     }
@@ -39,7 +39,7 @@ export type CardDrawnEventSchema = {
             id: string
             name: string
             hands: {
-                cards?: Card[]
+                cards?: HandCards[]
                 cardCount: number
             }
         }
@@ -47,7 +47,7 @@ export type CardDrawnEventSchema = {
             id: string
             name: string
             hands: {
-                cards?: Card[]
+                cards?: HandCards[]
                 cardCount: number
             }
         }

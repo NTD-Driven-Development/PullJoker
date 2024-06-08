@@ -1,5 +1,5 @@
 import { DomainEvent } from '../../../core/entity'
-import { Card } from '../value-object'
+import { HandCards } from '../entity'
 
 export type HandsCompletedSchema = {
     id: string
@@ -7,7 +7,7 @@ export type HandsCompletedSchema = {
         id: string
         name: string
         hands: {
-            cards: Card[]
+            cards: HandCards[]
             cardCount: number
         }
     }
