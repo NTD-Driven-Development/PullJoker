@@ -1,4 +1,4 @@
-import { GameId } from '../entity'
+import { GameId, HandCards } from '../entity'
 import { DomainEvent } from '../../../core/entity'
 import { Card } from '../value-object'
 

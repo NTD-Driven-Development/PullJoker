@@ -26,7 +26,10 @@ export class Player implements Entity<string> {
     }
 
     private checkCardsInHands(cards: Card[]): boolean {
-        return cards.some((card) => !this.hands.getCards().includes(card))
+        return cards.some(
+            (card) =>
+                !this.hands.getCards().some((c) => c.rank === card.rank && c.suit === card.suit),
+        )
     }
 
     private checkPlayCardInvariant(cards: Card[]) {
