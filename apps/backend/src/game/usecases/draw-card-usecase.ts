@@ -1,7 +1,7 @@
 import { DrawCardCommandSchema, Player, UseCase } from '@packages/domain'
 import { autoInjectable, inject } from 'tsyringe'
 import { EventBus, WebSocketEventBus } from '~/eventbus'
-import { DrawRandomCardFeatureToggle } from '~/feature-toggle/draw-random-card-feature-toggle'
+import { DrawRandomCardFeatureToggle } from '~/feature-toggle'
 import { GameRepository, GameRepositoryImpl } from '~/game/repository'
 
 export type DrawCardInput = DrawCardCommandSchema & { gameId: string }

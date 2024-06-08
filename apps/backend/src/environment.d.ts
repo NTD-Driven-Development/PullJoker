@@ -13,6 +13,7 @@ declare global {
             AUTH0_DOMAIN: string
             AUTH0_AUDIENCE: string
             FRONTEND_URL: string
+            LOBBY_BACKEND_URL: string
         }
     }
 }

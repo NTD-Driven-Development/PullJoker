@@ -3,6 +3,8 @@ import { EventBus } from '~/eventbus/eventbus'
 import { Server } from '@packages/socket'
 import { autoInjectable, inject } from 'tsyringe'
 import { Socket } from 'socket.io'
+import { SendGameEndedFeatureToggle } from '~/feature-toggle'
+import axios from 'axios'
 
 @autoInjectable()
 export class WebSocketEventBus implements EventBus {
@@ -172,6 +174,11 @@ export class WebSocketEventBus implements EventBus {
                     },
                 }
                 this.server.in(event.data.id).emit('game-ended', payload)
+                if (SendGameEndedFeatureToggle.isEnabled()) {
+                    axios.post(`${process.env.LOBBY_BACKEND_URL}/api/rooms/gameEnd`, {
+                        gameUrl: `${process.env.FRONTEND_URL}?gameId=${event.data.id}`,
+                    })
+                }
                 break
             }
             default:
