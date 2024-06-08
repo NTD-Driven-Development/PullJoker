@@ -31,6 +31,9 @@ export class GameRepositoryImpl implements GameRepository {
 
     public async from(id: GameId): Promise<Game> {
         const events = await this.repo.find({ where: { aggregateId: id } })
+        if (events.length === 0) {
+            throw new Error(`Game not found: ${id}`)
+        }
         return toDomain(events)
     }
 
