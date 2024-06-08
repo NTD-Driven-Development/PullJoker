@@ -23,14 +23,13 @@ export class Hand extends Group {
     }
 
     // 抽牌
-    drawCard = async (hand: Hand, idxs: number[], events?: DrawingEvents) => new Promise((resolve, reject) => {
+    drawCard = async (hand: Hand, idxs: number[], events?: DrawingEvents) => new Promise<Card[]>((resolve, reject) => {
         const animator = new DrawingAnimator(hand, this, idxs);
         
-        animator.onAnimated = async () => {
-            await events?.onAnimated?.();
-            
+        animator.onAnimated = async (cards) => {
+            // await events?.onAnimated?.();
             _.remove(this.drawingAnimators, (v) => v == animator);
-            return resolve(true);
+            return resolve(cards);
         };
         animator.onCardAtCenter = async (cards) => {
             await events?.onCardAtCenter?.(cards);
@@ -40,12 +39,12 @@ export class Hand extends Group {
     });
 
     // 出牌至棄牌堆
-    play = async (discardPile: DiscardPile, idxs: number[]) => new Promise((resolve, reject) => {
+    play = async (discardPile: DiscardPile, idxs: number[]) => new Promise<Card[]>((resolve, reject) => {
         const animator = new PlayingAnimator(discardPile, this, idxs);
         
-        animator.onAnimated = () => {
+        animator.onAnimated = (cards) => {
             _.remove(this.playingAnimators, (v) => v == animator);
-            return resolve(true);
+            return resolve(cards);
         };
 
         this.playingAnimators.push(animator);
@@ -63,7 +62,7 @@ export class Hand extends Group {
 
 interface DrawingEvents {
     onCardAtCenter?: (cards: Card[]) => Promise<void>,
-    onAnimated?: () => Promise<void>,
+    onAnimated?: (cards: Card[]) => Promise<void>,
 }
 
 class DrawingAnimator implements DrawingEvents {
@@ -85,7 +84,7 @@ class DrawingAnimator implements DrawingEvents {
     private options: DrawingOptions;
 
     onCardAtCenter?: (cards: Card[]) => Promise<void>;
-    onAnimated?: () => Promise<void>;
+    onAnimated?: (cards: Card[]) => Promise<void>;
 
     constructor(fromHand: Hand, toHand: Hand, idx: number[], options?: Partial<DrawingOptions>) {
         this.fromHand = fromHand;
@@ -162,7 +161,7 @@ class DrawingAnimator implements DrawingEvents {
                     this.toHand.addChild(c.card);
                 });
 
-                this.onAnimated?.();
+                this.onAnimated?.(this.diffToVectorConfigs.map((v) => v.card));
             }
         }
     }
@@ -279,7 +278,7 @@ class PlayingAnimator {
     private diffReserveVectorConfigs: DiffConfig[] = [];
     private options: PlayingOptions;
 
-    onAnimated?: () => void;
+    onAnimated?: (cards: Card[]) => void;
 
     constructor(discardPile: DiscardPile, hand: Hand, idxs: number[], options?: Partial<PlayingOptions>) {
         this.discardPile = discardPile;
@@ -335,7 +334,7 @@ class PlayingAnimator {
                 this.discardPile.addChild(c.card);
             });
 
-            this.onAnimated?.();
+            this.onAnimated?.(this.diffConfigs.map((v) => v.card));
         }
     }
 
