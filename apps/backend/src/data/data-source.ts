@@ -1,5 +1,9 @@
 import { config } from 'dotenv'
-config({ path: __dirname + `/../.env.${process.env.NODE_ENV}` })
+if (process.env.NODE_ENV === 'production') {
+    config({ path: __dirname + `/../.env.${process.env.NODE_ENV}` })
+} else {
+    config({ path: `.env.${process.env.NODE_ENV}` })
+}
 import { DataSource } from 'typeorm'
 import { ClearDatabaseFeatureToggle } from '~/feature-toggle'
 import { EventStore } from './entity'

@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { config } from 'dotenv'
-config({ path: `../.env.${process.env.NODE_ENV}` })
+if (process.env.NODE_ENV === 'production') {
+    config({ path: `../.env.${process.env.NODE_ENV}` })
+} else {
+    config({ path: `.env.${process.env.NODE_ENV}` })
+}
 import 'reflect-metadata'
 import fastify from 'fastify'
 import socketIO from 'fastify-socket.io'
@@ -56,14 +60,14 @@ import axios from 'axios'
                         process.exit(1)
                     }
                     console.log(`Server listening at ${address}`)
-
-                    try {
-                        axios.get(process.env.LOBBY_BACKEND_URL + '/api/health').then((res) => {
+                    axios
+                        .get(process.env.LOBBY_BACKEND_URL + '/api/health')
+                        .then((res) => {
                             console.log('Lobby service:', res.data)
                         })
-                    } catch (error: any) {
-                        console.error('Lobby service:', error.message)
-                    }
+                        .catch((err) => {
+                            console.error('Lobby service:', err.message || 'error')
+                        })
                 },
             )
         }
