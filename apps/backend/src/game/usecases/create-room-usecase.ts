@@ -1,6 +1,7 @@
 import { Game, UseCase } from '@packages/domain'
 import { v4 } from 'node-uuid'
 import { autoInjectable, inject } from 'tsyringe'
+import { Retry } from '~/decorators'
 import { GameRepository, GameRepositoryImpl } from '~/game/repository'
 
 export type CreateRoomInput = null
@@ -15,9 +16,10 @@ export class CreateRoomUseCase implements UseCase<CreateRoomInput, CreateRoomOut
         // private eventBus: EventBus,
     ) {}
 
-    async execute(input: CreateRoomInput): Promise<CreateRoomOutput> {
+    @Retry
+    async execute(): Promise<CreateRoomOutput> {
         const game = new Game(v4(), 'WAITING')
-        await this.gameRepository.save(game)
+        await this.gameRepository.save(game, 0)
         // const events = game.getDomainEvents()
         // this.eventBus.broadcast(events)
         return { gameId: game.getId() }

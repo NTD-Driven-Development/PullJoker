@@ -1,5 +1,6 @@
 import { DrawCardCommandSchema, GetGameResult, Player, UseCase } from '@packages/domain'
 import { autoInjectable, inject } from 'tsyringe'
+import { Retry } from '~/decorators'
 import { EventBus, WebSocketEventBus } from '~/eventbus'
 import { DrawRandomCardFeatureToggle } from '~/feature-toggle'
 import { GameRepository, GameRepositoryImpl } from '~/game/repository'
@@ -15,7 +16,9 @@ export class DrawCardUseCase implements UseCase<DrawCardInput, void> {
         private eventBus: EventBus,
     ) {}
 
+    @Retry
     async execute(input: DrawCardInput): Promise<void> {
+        const version = await this.gameRepository.getLastVersion(input.gameId)
         const game = await this.gameRepository.from(input.gameId)
         if (DrawRandomCardFeatureToggle.isEnabled()) {
             input.cardIndex = Math.floor(Math.random() * (game.currentPlayer as Player)?.getHands()?.getCards()?.length || 0)
@@ -25,7 +28,7 @@ export class DrawCardUseCase implements UseCase<DrawCardInput, void> {
             toPlayerId: input.toPlayerId,
             cardIndex: input.cardIndex,
         })
-        await this.gameRepository.save(game)
+        await this.gameRepository.save(game, version)
         const events = game.getDomainEvents()
         this.eventBus.broadcast(events)
         const afterGame = await this.gameRepository.from(input.gameId)

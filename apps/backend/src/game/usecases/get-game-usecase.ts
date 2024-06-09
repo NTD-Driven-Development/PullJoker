@@ -1,5 +1,6 @@
 import { GetGameResult, UseCase } from '@packages/domain'
 import { autoInjectable, inject } from 'tsyringe'
+import { Retry } from '~/decorators'
 import { GameRepository, GameRepositoryImpl } from '~/game/repository'
 
 export type GetGameInput = { gameId: string; userId: string }
@@ -12,6 +13,7 @@ export class GetGameUseCase implements UseCase<GetGameInput, GetGameOutput> {
         private gameRepository: GameRepository,
     ) {}
 
+    @Retry
     async execute(input: GetGameInput): Promise<GetGameOutput> {
         const game = await this.gameRepository.from(input.gameId)
         return new GetGameResult({

@@ -24,29 +24,21 @@ export class GameRepositoryImpl implements GameRepository {
         this.repo = AppDataSource.getRepository(EventStore)
     }
 
-    private async getLastVersion(id: GameId): Promise<number> {
+    public async getLastVersion(id: GameId): Promise<number> {
         const events = await this.repo.find({ where: { aggregateId: id } })
         return events.length
     }
 
     public async from(id: GameId): Promise<Game> {
-        const events = await this.repo.find({ where: { aggregateId: id } })
+        const events = await this.repo.find({ where: { aggregateId: id }, order: { version: 'ASC' } })
         if (events.length === 0) {
             throw new Error(`Game not found: ${id}`)
         }
         return toDomain(events)
     }
 
-    public async save(aggregate: Game): Promise<void> {
-        const version = await this.getLastVersion(aggregate.getId())
+    public async save(aggregate: Game, version: number): Promise<void> {
         await this.repo.save(toData(aggregate, version))
-    }
-
-    public findById(id: string): Promise<Game> {
-        throw new Error('Method not implemented.')
-    }
-    public delete(entity: Game): Promise<void> {
-        throw new Error('Method not implemented.')
     }
 }
 

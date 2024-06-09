@@ -1,5 +1,6 @@
 import { GetGameResult, JoinRoomCommandSchema, UseCase } from '@packages/domain'
 import { autoInjectable, inject } from 'tsyringe'
+import { Retry } from '~/decorators'
 import { EventBus, WebSocketEventBus } from '~/eventbus'
 import { GameRepository, GameRepositoryImpl } from '~/game/repository'
 
@@ -14,13 +15,15 @@ export class JoinRoomUseCase implements UseCase<JoinRoomInput, void> {
         private eventBus: EventBus,
     ) {}
 
+    @Retry
     async execute(input: JoinRoomInput): Promise<void> {
+        const version = await this.gameRepository.getLastVersion(input.gameId)
         const game = await this.gameRepository.from(input.gameId)
         game.joinRoom({
             playerId: input.playerId,
             playerName: input.playerName,
         })
-        await this.gameRepository.save(game)
+        await this.gameRepository.save(game, version)
         const events = game.getDomainEvents()
         this.eventBus.broadcast(events)
         const afterGame = await this.gameRepository.from(input.gameId)
