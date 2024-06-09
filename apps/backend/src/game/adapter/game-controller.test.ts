@@ -40,7 +40,10 @@ describe('e2e on game-controller', () => {
         await joinRoom(clientB, gameId)
         await joinRoom(clientC, gameId)
         await joinRoom(clientD, gameId)
-
+        let count = 0
+        clientA.on('card-played', (event) => {
+            count++
+        })
         await Promise.all([
             // Client D starts the game,
             startGame(clientD, gameId),
@@ -61,6 +64,11 @@ describe('e2e on game-controller', () => {
             cardPlayed(clientD, gameId),
         ])
 
+        clientA.once('get-game-result', async (event) => {
+            console.log('get-game-result', event)
+            const a = event.data.players?.reduce((acc, player) => acc + player.hands.cardCount, 0)
+            expect(a).toBe(53 - count * 2)
+        })
         await Promise.all([
             // B draws a card from A
             cardDrawn(clientB, gameId, clientA),

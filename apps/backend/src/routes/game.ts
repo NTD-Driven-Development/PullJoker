@@ -17,17 +17,21 @@ export const GameEventHandlers = (socket: Server) => async (event: Event, next: 
     switch (event[0]) {
         case 'join-room':
             await gameController.joinRoom(event[1], socket.auth.user)
+            next()
             break
         case 'start-game':
             await gameController.startGame(event[1], socket.auth.user)
+            next()
             break
         case 'draw-card':
             await gameController.drawCard(event[1], socket.auth.user)
+            next()
             break
         case 'get-my-status':
             const status = await gameController.getMyStatus(socket.auth.user)
             console.log('GameEventHandlers', status)
             socket.emit('get-my-status-result', status)
+            next()
             break
         default:
             await gameController.getMyStatus(socket.auth.user).then((status) => {
@@ -37,5 +41,4 @@ export const GameEventHandlers = (socket: Server) => async (event: Event, next: 
             })
             break
     }
-    next()
 }
