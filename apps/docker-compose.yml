@@ -23,18 +23,41 @@ services:
       - "5435:5432"
     networks:
       - docker
-
-  # backend:
+  backend:
+    image: node:20.12.2-alpine3.19
+    working_dir: /apps/backend
+    volumes:
+      - ./backend:/apps/backend
+      - ../packages/domain:/packages/domain
+      - ../packages/socket:/packages/socket
+    ports:
+      - "3002:3002"
+    command: sh -c "
+        npm install &&
+        npm run build &&
+        npm start"
+    depends_on:
+      - db
+    networks:
+      - docker
+  # frontend:
   #   image: node:20.12.2-alpine3.19
+  #   working_dir: /apps/frontend
+  #   environment:
+  #       NODE_ENV: production
+  #       NUXT_PUBLIC_USE_HTTPS: true
   #   volumes:
-  #     - ./backend:/apps/backend
-  #     - ../packages:/packages
-  #   working_dir: /apps/backend
-  #   entrypoint: ["sh", "-c", "npm install && npm run dev"]
+  #     - ./frontend:/apps/frontend
+  #     - ../packages/domain:/packages/domain
+  #     - ../packages/socket:/packages/socket
+  #   ports:
+  #     - "3011:3000"
+  #   command: sh -c "
+  #       npm install &&
+  #       npm run build &&
+  #       npm start"
   #   depends_on:
   #     - db
-  #   ports:
-  #     - "3000:3000"
   #   networks:
   #     - docker
 
