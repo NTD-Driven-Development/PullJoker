@@ -11,6 +11,7 @@ import { container } from 'tsyringe'
 import { AppDataSource } from './data/data-source'
 import { authMiddleware, GetNewStatusHandler } from './middlewares'
 import { GameEventHandlers, GameRoutes } from './routes'
+import axios from 'axios'
 ;(async () => {
     try {
         // import { UserRoutes, RoomRoutes, GameRoutes } from '~/routes'
@@ -55,6 +56,14 @@ import { GameEventHandlers, GameRoutes } from './routes'
                         process.exit(1)
                     }
                     console.log(`Server listening at ${address}`)
+
+                    try {
+                        axios.get(process.env.LOBBY_BACKEND_URL + '/api/health').then((res) => {
+                            console.log('Lobby service:', res.data)
+                        })
+                    } catch (error: any) {
+                        console.error('Lobby service:', error.message)
+                    }
                 },
             )
         }

@@ -1,5 +1,5 @@
 import { config } from 'dotenv'
-config({ path: `.env.${process.env.NODE_ENV}` })
+config({ path: __dirname + `/../.env.${process.env.NODE_ENV}` })
 import { DataSource } from 'typeorm'
 import { ClearDatabaseFeatureToggle } from '~/feature-toggle'
 import { EventStore } from './entity'

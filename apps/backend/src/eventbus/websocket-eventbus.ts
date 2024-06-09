@@ -185,9 +185,24 @@ export class WebSocketEventBus implements EventBus {
                 }
                 this.server.in(event.data.id).emit('game-ended', payload)
                 if (SendGameEndedFeatureToggle.isEnabled()) {
-                    axios.post(`${process.env.LOBBY_BACKEND_URL}/api/rooms/gameEnd`, {
-                        gameUrl: `${process.env.FRONTEND_URL}?gameId=${event.data.id}`,
-                    })
+                    axios
+                        .post(
+                            `${process.env.LOBBY_BACKEND_URL}/api/rooms/gameEnd`,
+                            {
+                                gameUrl: `${process.env.FRONTEND_URL}?gameId=${event.data.id}`,
+                            },
+                            {
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                            },
+                        )
+                        .then(() => {
+                            console.log('Successfully sent game ended event to lobby')
+                        })
+                        .catch((error) => {
+                            console.error('Failed to send game ended event to lobby', error)
+                        })
                 }
                 break
             }
