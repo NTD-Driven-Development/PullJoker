@@ -192,20 +192,21 @@ export class WebSocketEventBus implements EventBus {
                 break
             }
             case event instanceof GetGameResult: {
-                event.data.players.forEach((EventClient) => {
+                event.data?.players.forEach((EventClient) => {
                     this.server.to(EventClient.id).emit('get-game-result', {
                         type: 'get-game-result' as const,
                         data: {
                             ...event.data,
-                            players: event.data.players.map((player) => {
+                            players: event.data?.players.map((player) => {
                                 const isMe = player.id === EventClient.id
-                                const cards = player.hands?.cards
+                                const cards = player?.hands?.cards || []
+                                const cardCount = player?.hands?.cardCount || 0
                                 return {
                                     id: player.id,
                                     name: player.name,
                                     hands: {
                                         cards: isMe ? cards : undefined,
-                                        cardCount: player.hands?.cardCount,
+                                        cardCount: cardCount,
                                     },
                                 }
                             }),

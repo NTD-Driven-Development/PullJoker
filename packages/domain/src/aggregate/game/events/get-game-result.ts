@@ -6,16 +6,14 @@ export type GetGameResultSchema = {
     id: GameId
     status: GameStatus
     round: number | null
-    players:
-        | {
-              id: string
-              name: string
-              hands: {
-                  cards?: HandCards[]
-                  cardCount: number
-              } | null
-          }[]
-        | null
+    players: {
+        id: string
+        name: string
+        hands: {
+            cards?: HandCards[]
+            cardCount: number
+        } | null
+    }[]
     deck: {
         cards: Card[]
     } | null
