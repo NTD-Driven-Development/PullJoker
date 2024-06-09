@@ -113,7 +113,7 @@ export class Deck extends Group {
     }
     
     private frame = () => {
-        this.strokeColor = new Color(1, 0, 0);
+        // this.strokeColor = new Color(1, 0, 0);
 
         _.each(this.pushingAnimators, (v) => {
             v?.moveNext();

@@ -12,6 +12,13 @@ export class PullJoker extends Project {
     constructor(canvas: HTMLCanvasElement) {
         super(canvas);
 
+        if (canvas.clientWidth >= 700) {
+            this.view.scale(1);
+        }
+        else {
+            this.view.scale(0.5);
+        }
+
         this.discardPile = new DiscardPile(this.view.bounds.center);
 
         this.hands = new Map();
@@ -39,7 +46,6 @@ export class PullJoker extends Project {
         Deck.makeFullDeck(this.view.bounds.center)
         .then(async (deck) => {
             this.deck = deck;
-            this.deck.rotate(20);
             
             await this.deck.shuffle(10, { time: 0.2 });
             

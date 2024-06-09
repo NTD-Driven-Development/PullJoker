@@ -25,6 +25,13 @@ export class PullJoker extends Project {
     constructor(canvas: HTMLCanvasElement, playerId: string, gameId: string) {
         super(canvas);
 
+        if (canvas.clientWidth >= 700) {
+            this.view.scale(1);
+        }
+        else {
+            this.view.scale(0.5);
+        }
+
         this.playerId = playerId;
         this.gameId = gameId;
         this.discardPile = new DiscardPile(this.view.bounds.center);
@@ -96,21 +103,69 @@ export class PullJoker extends Project {
                     players.unshift(...subPlayers);
                 }
 
-                _.each(players, (player, index) => {
-                    const hand = new Hand();
-                    const startPosition = this.view.bounds.bottomCenter.add([0, -hand.bounds.height / 2]);
+                if (players.length == 2) {
+                    const hand1 = new Hand();
+                    hand1.position = this.view.bounds.bottomCenter.add([0, -hand1.bounds.height / 2]);
 
-                    if (this.playerId == player.id) {
-                        hand.position = startPosition;
-                    }
-                    else {
-                        const angle = 360 / players.length * index;
-                        hand.position = startPosition.rotate(angle, this.view.bounds.center);
-                        hand.rotate(angle);
-                    }
+                    const hand2 = new Hand();
+                    hand2.position = this.view.bounds.topCenter.add([0, hand1.bounds.height / 2]);
 
-                    this.hands.set(player.id, hand);
-                });
+                    this.hands.set(players[0].id, hand1);
+                    this.hands.set(players[1].id, hand2);
+                }
+                else if (players.length == 3) {
+                    const hand1 = new Hand();
+                    hand1.position = this.view.bounds.bottomCenter.add([0, -hand1.bounds.height / 2]);
+
+                    const hand2 = new Hand();
+                    hand2.position = this.view.bounds.leftCenter.add([hand1.bounds.height / 2, 0]);
+                    hand2.rotate(90);
+
+                    const hand3 = new Hand();
+                    hand3.position = this.view.bounds.rightCenter.add([-hand1.bounds.height / 2, 0]);
+                    hand3.rotate(270);
+                    
+                    this.hands.set(players[0].id, hand1);
+                    this.hands.set(players[1].id, hand2);
+                    this.hands.set(players[2].id, hand3);
+                }
+                else if (players.length == 4) {
+                    const hand1 = new Hand();
+                    hand1.position = this.view.bounds.bottomCenter.add([0, -hand1.bounds.height / 2]);
+
+                    const hand2 = new Hand();
+                    hand2.position = this.view.bounds.leftCenter.add([hand1.bounds.height / 2, 0]);
+                    hand2.rotate(90);
+
+                    const hand3 = new Hand();
+                    hand3.position = this.view.bounds.topCenter.add([0, hand1.bounds.height / 2]);
+                    hand3.rotate(180);
+
+                    const hand4 = new Hand();
+                    hand4.position = this.view.bounds.rightCenter.add([-hand1.bounds.height / 2, 0]);
+                    hand4.rotate(270);
+                    
+                    this.hands.set(players[0].id, hand1);
+                    this.hands.set(players[1].id, hand2);
+                    this.hands.set(players[2].id, hand3);
+                    this.hands.set(players[3].id, hand4);
+                }
+
+                // _.each(players, (player, index) => {
+                //     const hand = new Hand();
+                //     const startPosition = this.view.bounds.bottomCenter.add([0, -hand.bounds.height / 2]);
+
+                //     if (this.playerId == player.id) {
+                //         hand.position = startPosition;
+                //     }
+                //     else {
+                //         const angle = 360 / players.length * index;
+                //         hand.position = startPosition.rotate(angle, this.view.bounds.center);
+                //         hand.rotate(angle);
+                //     }
+
+                //     this.hands.set(player.id, hand);
+                // });
 
                 this.deck = await Deck.make(this.view.bounds.center, 53);
                 await this.deck.shuffle(10, { time: 0.2 });
@@ -249,12 +304,24 @@ export class PullJoker extends Project {
             });
         });
 
-        this.socket.on('hands-completed', () => {
-            alert('你出完了');
+        this.socket.on('hands-completed', (event) => {
+            this.messageQueue.push(async (cb) => {
+                if (event.data.playerId != this.playerId)
+                    return;
+
+                alert('你出完了');
+
+                cb?.(undefined, undefined);
+            });
         });
 
         this.socket.on('game-ended', (event) => {
-            console.log(JSON.stringify(event));
+            this.messageQueue.push(async (cb) => {
+                alert('遊戲結束');
+                console.log(JSON.stringify(event));
+
+                cb?.(undefined, undefined);
+            });
         });
 
         this.socket.emit('join-room', {

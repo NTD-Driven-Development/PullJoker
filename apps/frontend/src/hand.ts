@@ -18,7 +18,7 @@ export class Hand extends Group {
         this.applyMatrix = false;
 
         const border = new Path.Rectangle(new Rectangle(0, 0, 600, 200));
-        border.strokeColor = new Color(1, 0, 0);
+        // border.strokeColor = new Color(1, 0, 0);
         this.addChild(border);
 
         this.onFrame = this.frame;
