@@ -193,11 +193,11 @@ export class Game extends AggregateRoot<GameId> {
                 },
             }),
         )
-        if (fromPlayer.checkHandsEmpty()) {
-            this.completeHandsAndCheckGame(fromPlayer)
-        }
         if (toPlayer.haveTwoSameRankCards()) {
             this.playCard(toPlayer, toPlayer.getTwoSameRankCards())
+        }
+        if (fromPlayer.checkHandsEmpty()) {
+            this.completeHandsAndCheckGame(fromPlayer)
         }
         if (toPlayer.checkHandsEmpty()) {
             this.completeHandsAndCheckGame(toPlayer)
