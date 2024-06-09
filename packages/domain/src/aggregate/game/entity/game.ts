@@ -109,10 +109,9 @@ export class Game extends AggregateRoot<GameId> {
     private initDeckAndDeal(): void {
         const deck = new Deck()
         deck.newDeck()
-        const randomIndex = Math.floor(Math.random() * Game.MAX_PLAYERS)
         const players = this.players.map((player, index) => {
             const hands = new Hands()
-            if (index === randomIndex) {
+            if (index === 0) {
                 const cards = deck.deal(14)
                 hands.setCards(cards)
             } else {
