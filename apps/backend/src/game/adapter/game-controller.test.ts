@@ -93,11 +93,13 @@ describe('e2e on game-controller', () => {
             const playerCount = players.length
             const cp = currentPlayer
             const np = nextPlayer
+            const other = players.filter((player) => player !== cp && player !== np)[0]
 
             await Promise.all([
                 // C draws a card from B
                 cardDrawn(np, gameId, cp),
                 [cardDrawnToPlayer(np, cp), cardDrawnFromPlayer(cp, np)],
+                cardDrawnWithOtherPlayer(other),
             ])
 
             currentPlayer = toCurrentPlayer(cp, players, playerCount, finishedPlayers) as Client
@@ -143,6 +145,16 @@ function cardDrawn(to: Client, gameId: any, from: Client, cardIndex: number = 0)
         to.emit('draw-card', {
             type: 'draw-card',
             data: { gameId, fromPlayerId: (from.auth as { [key: string]: any }).id, cardIndex: Math.floor(Math.random() * cardIndex) },
+        })
+    })
+}
+
+function cardDrawnWithOtherPlayer(other: Client): Promise<number> {
+    return new Promise((resolve) => {
+        other.once('card-drawn', (event) => {
+            expect(event.data.card).toBe(undefined)
+            expect(event.data.cardIndex).toBeGreaterThanOrEqual(0)
+            resolve(true)
         })
     })
 }

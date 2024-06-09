@@ -138,7 +138,7 @@ export class WebSocketEventBus implements EventBus {
                     const payload = {
                         type: 'card-drawn' as const,
                         data: {
-                            card: event.data.card,
+                            card: isMe ? event.data.card : undefined,
                             cardIndex: event.data.cardIndex,
                             fromPlayer: {
                                 id: fromPlayer.id,
