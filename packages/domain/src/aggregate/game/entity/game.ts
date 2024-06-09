@@ -86,6 +86,9 @@ export class Game extends AggregateRoot<GameId> {
         if (this.players.length !== 4) {
             throw new Error('Game must have 4 players')
         }
+        if (this.status !== 'WAITING' && this.status === 'END') {
+            throw new Error('Game already started or ended')
+        }
         this.apply(
             new GameStarted({
                 id: this.id,
