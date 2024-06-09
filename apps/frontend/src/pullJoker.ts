@@ -17,8 +17,6 @@ export class PullJoker extends Project {
     game?: GetGameResultEventSchema['data'];
     isStarted: boolean = false;
     isDealing: boolean = false;
-    currentPlayer?: string;
-    nextPlayer?: string;
     hands: Map<string, Hand>;
     deck?: Deck;
     discardPile: DiscardPile;
@@ -50,14 +48,37 @@ export class PullJoker extends Project {
 
     startListen = () => {
         this.socket.on('get-game-result', (event) => {
-            if (event.data.players?.length == 4 && !this.isStarted) {
-                this.socket.emit('start-game', {
-                    type: 'start-game',
-                    data: {
-                        gameId: this.gameId,
-                    },
+            this.messageQueue.push(async (cb) => {
+                // && !['1', '2', '3'].includes(this.playerId)
+                if (event.data.players?.length == 4 && !this.isStarted) {
+                    this.socket.emit('start-game', {
+                        type: 'start-game',
+                        data: {
+                            gameId: this.gameId,
+                        },
+                    })
+                }
+    
+                _.each(Array.from(this.hands.entries()), ([key, hand]) => {
+                    hand.beDraw = false;
+                    
+                    if (key == event.data.currentPlayer?.id && this.playerId == event.data.nextPlayer?.id && !this.isDealing) {
+                        hand.beDraw = true;
+                        hand.onDrawed = (index) => {
+                            this.socket.emit('draw-card', {
+                                type: 'draw-card',
+                                data: {
+                                    gameId: this.gameId,
+                                    cardIndex: index,
+                                    fromPlayerId: event.data.currentPlayer?.id!,
+                                }
+                            });
+                        };
+                    }
                 })
-            }
+
+                cb?.(undefined, undefined);
+            });
         });
 
         this.socket.on('game-started', async (event) => {
@@ -100,6 +121,7 @@ export class PullJoker extends Project {
 
         this.socket.on('card-dealt', async (evnet) => {
             this.messageQueue.push(async (cb) => {
+                this.isDealing = true;
                 const players = evnet.data.players;
 
                 for (const i of _.range(0, 53)) {
@@ -134,6 +156,8 @@ export class PullJoker extends Project {
                         card.faceDown = false;
                     }
                 }
+
+                this.isDealing = false;
 
                 cb?.(undefined, undefined);
             });
@@ -171,11 +195,6 @@ export class PullJoker extends Project {
                     card.faceDown = false;
                 });
 
-                // if (event.data.nextPlayer?.id)
-                // this.socket.emit('draw-card', {
-                //     type: 'draw-card',
-                // });
-
                 cb?.(undefined, undefined);
             });
         });
@@ -184,36 +203,58 @@ export class PullJoker extends Project {
             this.messageQueue.push(async (cb) => {
                 const fromHand = this.hands.get(event.data.fromPlayer.id)!;
                 const toHand = this.hands.get(event.data.toPlayer.id)!;
-                const cards = await toHand?.drawCard(fromHand, [event.data.cardIndex]);
-                
-                _.forEach(cards, (card, index) => {
-                    const { suit, rank } = event.data.card!;
-                    suit == 'CLUBS' && (card.cardType = 1);
-                    suit == 'HEARTS' && (card.cardType = 2);
-                    suit == 'SPADES' && (card.cardType = 3);
-                    suit == 'DIAMONDS' && (card.cardType = 4);
-                    suit == 'JOKER' && (card.cardType = 5);
-                    rank == 'A' && (card.cardNo = 1);
-                    rank == '2' && (card.cardNo = 2);
-                    rank == '3' && (card.cardNo = 3);
-                    rank == '4' && (card.cardNo = 4);
-                    rank == '5' && (card.cardNo = 5);
-                    rank == '6' && (card.cardNo = 6);
-                    rank == '7' && (card.cardNo = 7);
-                    rank == '8' && (card.cardNo = 8);
-                    rank == '9' && (card.cardNo = 9);
-                    rank == '10' && (card.cardNo = 10);
-                    rank == 'J' && (card.cardNo = 11);
-                    rank == 'Q' && (card.cardNo = 12);
-                    rank == 'K' && (card.cardNo = 13);
-                    rank == 'JOKER_1' && (card.cardNo = 1);
-                    rank == 'JOKER_2' && (card.cardNo = 2);
+                const cards = await toHand?.drawCard(fromHand, [event.data.cardIndex], {
+                    onCardAtCenter: (cards) => {
+                        if (event.data.toPlayer.id != this.playerId)
+                            return;
 
-                    card.faceDown = false;
+                        _.forEach(cards, (card, index) => {
+                            const { suit, rank } = event.data.card!;
+                            suit == 'CLUBS' && (card.cardType = 1);
+                            suit == 'HEARTS' && (card.cardType = 2);
+                            suit == 'SPADES' && (card.cardType = 3);
+                            suit == 'DIAMONDS' && (card.cardType = 4);
+                            suit == 'JOKER' && (card.cardType = 5);
+                            rank == 'A' && (card.cardNo = 1);
+                            rank == '2' && (card.cardNo = 2);
+                            rank == '3' && (card.cardNo = 3);
+                            rank == '4' && (card.cardNo = 4);
+                            rank == '5' && (card.cardNo = 5);
+                            rank == '6' && (card.cardNo = 6);
+                            rank == '7' && (card.cardNo = 7);
+                            rank == '8' && (card.cardNo = 8);
+                            rank == '9' && (card.cardNo = 9);
+                            rank == '10' && (card.cardNo = 10);
+                            rank == 'J' && (card.cardNo = 11);
+                            rank == 'Q' && (card.cardNo = 12);
+                            rank == 'K' && (card.cardNo = 13);
+                            rank == 'JOKER_1' && (card.cardNo = 1);
+                            rank == 'JOKER_2' && (card.cardNo = 2);
+        
+                            card.faceDown = false;
+                        });
+                    },
+
+                    onAnimated: (cards) => {
+                        if (event.data.toPlayer.id == this.playerId)
+                            return;
+
+                        _.forEach(cards, (card, index) => {
+                            card.faceDown = true;
+                        });
+                    },
                 });
 
                 cb?.(undefined, undefined);
             });
+        });
+
+        this.socket.on('hands-completed', () => {
+            alert('你出完了');
+        });
+
+        this.socket.on('game-ended', (event) => {
+            console.log(JSON.stringify(event));
         });
 
         this.socket.emit('join-room', {

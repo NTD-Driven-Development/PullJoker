@@ -6,7 +6,9 @@ import _ from 'lodash';
 
 // 手牌
 export class Hand extends Group {
+    beDraw: boolean = false;
     cards: Card[] = [];
+    onDrawed?: (idx: number) => void;
     private drawingAnimators: DrawingAnimator[] = [];
     private playingAnimators: PlayingAnimator[] = [];
 
@@ -27,12 +29,12 @@ export class Hand extends Group {
         const animator = new DrawingAnimator(hand, this, idxs);
         
         animator.onAnimated = async (cards) => {
-            // await events?.onAnimated?.();
+            events?.onAnimated?.(cards);
             _.remove(this.drawingAnimators, (v) => v == animator);
             return resolve(cards);
         };
         animator.onCardAtCenter = async (cards) => {
-            await events?.onCardAtCenter?.(cards);
+            events?.onCardAtCenter?.(cards);
         }
 
         this.drawingAnimators.push(animator);
@@ -57,12 +59,32 @@ export class Hand extends Group {
         _.each(this.playingAnimators, (v) => {
             v?.moveNext();
         });
+        
+        this.cards.map((v, index) => {
+            if (this.beDraw) {
+                v.onMouseEnter = () => {
+                    v.position = v.position.add([0, -10]);
+                }
+                v.onMouseLeave = () => {
+                    v.position = v.position.add([0, 10]);
+                }
+                v.onClick = () => {
+                    v.position = v.position.add([0, 10]);
+                    this.onDrawed?.(index);
+                }
+            }
+            else {
+                v.onMouseEnter = null;
+                v.onMouseLeave = null;
+                v.onClick = null;
+            }
+        });
     }
 }
 
 interface DrawingEvents {
-    onCardAtCenter?: (cards: Card[]) => Promise<void>,
-    onAnimated?: (cards: Card[]) => Promise<void>,
+    onCardAtCenter?: (cards: Card[]) => void,
+    onAnimated?: (cards: Card[]) => void,
 }
 
 class DrawingAnimator implements DrawingEvents {
@@ -99,7 +121,7 @@ class DrawingAnimator implements DrawingEvents {
             return;
         }
 
-        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).ceil().equals([0, 0])) {
+        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).isZero()) {
             this.calcSteps();
             this.calcDiffVector();
 
@@ -293,7 +315,7 @@ class PlayingAnimator {
             return;
         }
 
-        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).ceil().equals([0, 0])) {
+        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).isZero()) {
             this.calcSteps();
             this.calcDiffVector();
 

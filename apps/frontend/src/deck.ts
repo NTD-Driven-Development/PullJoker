@@ -154,7 +154,7 @@ class PushingAnimator {
             return;
         }
 
-        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).ceil().equals([0, 0])) {
+        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).isZero()) {
             this.calcSteps();
             this.calcDiffVector();
 
@@ -329,7 +329,8 @@ class DealingAnimator {
             return;
         }
 
-        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).ceil().equals([0, 0])) {
+        // !this.checkPoint.subtract(this.tempCheckPoint).isZero()
+        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).isZero()) {
             this.calcSteps();
             this.calcDiffVector();
 
