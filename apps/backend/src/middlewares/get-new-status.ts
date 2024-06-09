@@ -9,9 +9,9 @@ const GetNewStatusHandler = (socket: Server) => async (event: Event, next: (err?
     socket.emit('get-my-status-result', status)
     if (socket.auth.user.gameId) {
         socket.join(socket.auth.user.gameId)
-        const gameStatus = await gameController.getGame({ type: 'get-game', data: { gameId: socket.auth.user.gameId } }, socket.auth.user)
-        socket.to(socket.auth.user.gameId).emit('get-game-result', gameStatus)
-        socket.emit('get-game-result', gameStatus)
+        //     const gameStatus = await gameController.getGame({ type: 'get-game', data: { gameId: socket.auth.user.gameId } }, socket.auth.user)
+        //     socket.to(socket.auth.user.gameId).emit('get-game-result', gameStatus)
+        //     socket.emit('get-game-result', gameStatus)
     }
     next()
 }

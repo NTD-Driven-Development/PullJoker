@@ -1,4 +1,14 @@
-import { CardDealt, CardDrawn, CardPlayed, DomainEvent, GameEnded, GameStarted, HandsCompleted, PlayerJoinedRoom } from '@packages/domain'
+import {
+    CardDealt,
+    CardDrawn,
+    CardPlayed,
+    DomainEvent,
+    GameEnded,
+    GameStarted,
+    GetGameResult,
+    HandsCompleted,
+    PlayerJoinedRoom,
+} from '@packages/domain'
 import { EventBus } from '~/eventbus/eventbus'
 import { Server } from '@packages/socket'
 import { autoInjectable, inject } from 'tsyringe'
@@ -179,6 +189,29 @@ export class WebSocketEventBus implements EventBus {
                         gameUrl: `${process.env.FRONTEND_URL}?gameId=${event.data.id}`,
                     })
                 }
+                break
+            }
+            case event instanceof GetGameResult: {
+                event.data.players.forEach((EventClient) => {
+                    this.server.to(EventClient.id).emit('get-game-result', {
+                        type: 'get-game-result' as const,
+                        data: {
+                            ...event.data,
+                            players: event.data.players.map((player) => {
+                                const isMe = player.id === EventClient.id
+                                const cards = player.hands?.cards
+                                return {
+                                    id: player.id,
+                                    name: player.name,
+                                    hands: {
+                                        cards: isMe ? cards : undefined,
+                                        cardCount: player.hands?.cardCount,
+                                    },
+                                }
+                            }),
+                        },
+                    })
+                })
                 break
             }
             default:
