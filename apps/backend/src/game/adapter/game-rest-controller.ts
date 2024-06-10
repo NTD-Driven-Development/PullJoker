@@ -10,6 +10,7 @@ export class GameRestController {
     ) {}
 
     public async createRoom(request: FastifyRequest, reply: FastifyReply) {
+        console.log('Creating room', request.ip)
         const { gameId } = await this.createRoomUseCase.execute()
         reply.send({ gameId, gameUrl: `${process.env.FRONTEND_URL}?gameId=${gameId}` })
     }

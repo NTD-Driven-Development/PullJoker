@@ -14,7 +14,7 @@ import { Server } from '@packages/socket'
 import { autoInjectable, inject } from 'tsyringe'
 import { Socket } from 'socket.io'
 import { SendGameEndedFeatureToggle } from '~/feature-toggle'
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 
 @autoInjectable()
 export class WebSocketEventBus implements EventBus {
@@ -200,8 +200,8 @@ export class WebSocketEventBus implements EventBus {
                         .then(() => {
                             console.log('Successfully sent game ended event to lobby')
                         })
-                        .catch((error) => {
-                            console.error('Failed to send game ended event to lobby', error)
+                        .catch((error: AxiosError) => {
+                            console.error('Failed to send game ended event to lobby', error?.response?.data)
                         })
                 }
                 break
