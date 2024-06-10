@@ -23,8 +23,9 @@
 		const route = useRoute();
 		const gameId = route.query.gameId as string ?? '';
 		const playerId = route.query.playerId as string ?? '';
-		
-		game.value = new PullJoker(canvas.value!, playerId, gameId);
+		const playerName = route.query.playerName as string ?? undefined;
+
+		game.value = new PullJoker(canvas.value!, gameId, playerId, playerName);
 
 		window.addEventListener('resize', resizeCanvas);
 		resizeCanvas();

@@ -1,5 +1,4 @@
-import { Path, Rectangle, Color, Point, Group } from 'paper/dist/paper-core';
-import { Power2 } from 'gsap';
+import { Path, Rectangle, Point, Group } from 'paper/dist/paper-core';
 import { Card } from '~/src/card';
 import _ from 'lodash';
 

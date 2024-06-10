@@ -1,4 +1,4 @@
-import { Color, Group, Path, Point, Rectangle } from 'paper/dist/paper-core';
+import { Group, Path, Point, Rectangle } from 'paper/dist/paper-core';
 import { Power2 } from 'gsap';
 import { Card } from '~/src/card';
 import type { DiscardPile } from '~/src/discardPile';
@@ -113,7 +113,7 @@ class DrawingAnimator implements DrawingEvents {
         this.toHand = toHand;
         this.cards = this.fromHand.cards?.filter((v, i) => Array.from(new Set(idx)).includes(i));
         this.checkPoint = this.toHand.localToGlobal(this.toHand.bounds.size.multiply(0.5));
-        this.options = _.defaults(options, { time: 3, standTime: 2 });
+        this.options = _.defaults(options, { time: 2, standTime: 1 });
     }
 
     moveNext = async () => {

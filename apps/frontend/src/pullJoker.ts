@@ -1,18 +1,20 @@
 import { Project } from 'paper/dist/paper-core';
-import type { Client } from '@packages/socket';
+import { io } from 'socket.io-client';
+import { toast, type ToastCloseHandle } from '~/src/notificator';
 import { Deck } from '~/src/deck';
 import { DiscardPile } from '~/src/discardPile';
 import { Hand } from '~/src/hand';
-import _ from 'lodash';
-import { io } from 'socket.io-client';
+import type { Client } from '@packages/socket';
 import type { GetGameResultEventSchema } from '@packages/domain';
 import Queue from 'queue';
+import _ from 'lodash';
 
 const SOCKET_HOST = 'localhost:3002';
 
 export class PullJoker extends Project {
-    playerId: string;
     gameId: string;
+    playerId: string;
+    playerName: string;
     socket: Client;
     game?: GetGameResultEventSchema['data'];
     isStarted: boolean = false;
@@ -21,8 +23,12 @@ export class PullJoker extends Project {
     deck?: Deck;
     discardPile: DiscardPile;
     messageQueue: Queue = new Queue({ results: [] });
+    waitPlayerJoinToastCloseHandle?: ToastCloseHandle;
+    isYourTurnToastCloseHandle?: ToastCloseHandle;
+    handCompletedToastCloseHandle?: ToastCloseHandle;
+    endedToastCloseHandle?: ToastCloseHandle;
 
-    constructor(canvas: HTMLCanvasElement, playerId: string, gameId: string) {
+    constructor(canvas: HTMLCanvasElement, gameId: string, playerId: string, playerName: string = `player ${playerId}`) {
         super(canvas);
 
         if (canvas.clientWidth >= 700) {
@@ -32,8 +38,12 @@ export class PullJoker extends Project {
             this.view.scale(0.5);
         }
 
-        this.playerId = playerId;
+        console.log(playerName);
+        
+
         this.gameId = gameId;
+        this.playerId = playerId;
+        this.playerName = playerName;
         this.discardPile = new DiscardPile(this.view.bounds.center);
         this.hands = new Map();
 
@@ -44,7 +54,7 @@ export class PullJoker extends Project {
 			transports: ['websocket'],
             query: {
                 playerId: playerId,
-                playerName: 'name',
+                playerName: playerName,
             },
 		});
         
@@ -56,44 +66,50 @@ export class PullJoker extends Project {
     startListen = () => {
         this.socket.on('get-game-result', (event) => {
             this.messageQueue.push(async (cb) => {
-                // && !['1', '2', '3'].includes(this.playerId)
-                if (event.data.players?.length == 4 && !this.isStarted) {
-                    this.socket.emit('start-game', {
-                        type: 'start-game',
-                        data: {
-                            gameId: this.gameId,
-                        },
-                    })
-                }
-    
+                if (this.isDealing || event.data.status == 'END')
+                    return;
+
                 _.each(Array.from(this.hands.entries()), ([key, hand]) => {
                     hand.beDraw = false;
-                    
-                    if (key == event.data.currentPlayer?.id && this.playerId == event.data.nextPlayer?.id && !this.isDealing) {
-                        hand.beDraw = true;
-                        hand.onDrawed = (index) => {
-                            this.socket.emit('draw-card', {
-                                type: 'draw-card',
-                                data: {
-                                    gameId: this.gameId,
-                                    cardIndex: index,
-                                    fromPlayerId: event.data.currentPlayer?.id!,
-                                }
-                            });
-                        };
-                    }
-                })
+                });
+                
+                if (this.playerId == event.data.nextPlayer?.id) {
+                    const hand = this.hands.get(event.data.currentPlayer?.id!)!;
 
+                    hand.beDraw = true;
+                    hand.onDrawed = (index) => {
+                        this.socket.emit('draw-card', {
+                            type: 'draw-card',
+                            data: {
+                                gameId: this.gameId,
+                                cardIndex: index,
+                                fromPlayerId: event.data.currentPlayer?.id!,
+                            }
+                        });
+                    };
+
+                    this.isYourTurnToastCloseHandle = toast('輪到你的回合了', this.view.center);
+                }
+                
                 cb?.(undefined, undefined);
             });
         });
 
+        this.socket.on('player-joined-room', (event) => {
+            this.socket.emit('start-game', {
+                type: 'start-game',
+                data: {
+                    gameId: this.gameId,
+                },
+            });
+
+            this.waitPlayerJoinToastCloseHandle?.();
+            this.waitPlayerJoinToastCloseHandle = toast('等待其他玩家加入中', this.view.center);
+        });
+
         this.socket.on('game-started', async (event) => {
             this.messageQueue.push(async (cb) => {
-                if (this.isStarted)
-                    return;
-    
-                this.isStarted = true;
+                this.waitPlayerJoinToastCloseHandle?.();
 
                 const players = event.data.players;
                 const index = players.findIndex((v) => v.id == this.playerId);
@@ -150,22 +166,6 @@ export class PullJoker extends Project {
                     this.hands.set(players[2].id, hand3);
                     this.hands.set(players[3].id, hand4);
                 }
-
-                // _.each(players, (player, index) => {
-                //     const hand = new Hand();
-                //     const startPosition = this.view.bounds.bottomCenter.add([0, -hand.bounds.height / 2]);
-
-                //     if (this.playerId == player.id) {
-                //         hand.position = startPosition;
-                //     }
-                //     else {
-                //         const angle = 360 / players.length * index;
-                //         hand.position = startPosition.rotate(angle, this.view.bounds.center);
-                //         hand.rotate(angle);
-                //     }
-
-                //     this.hands.set(player.id, hand);
-                // });
 
                 this.deck = await Deck.make(this.view.bounds.center, 53);
                 await this.deck.shuffle(10, { time: 0.2 });
@@ -258,7 +258,10 @@ export class PullJoker extends Project {
             this.messageQueue.push(async (cb) => {
                 const fromHand = this.hands.get(event.data.fromPlayer.id)!;
                 const toHand = this.hands.get(event.data.toPlayer.id)!;
-                const cards = await toHand?.drawCard(fromHand, [event.data.cardIndex], {
+
+                this.isYourTurnToastCloseHandle?.();
+
+                await toHand?.drawCard(fromHand, [event.data.cardIndex], {
                     onCardAtCenter: (cards) => {
                         if (event.data.toPlayer.id != this.playerId)
                             return;
@@ -309,7 +312,7 @@ export class PullJoker extends Project {
                 if (event.data.playerId != this.playerId)
                     return;
 
-                alert('你出完了');
+                this.handCompletedToastCloseHandle = toast('你已空手，觀戰中。', this.view.center);
 
                 cb?.(undefined, undefined);
             });
@@ -317,8 +320,12 @@ export class PullJoker extends Project {
 
         this.socket.on('game-ended', (event) => {
             this.messageQueue.push(async (cb) => {
-                alert('遊戲結束');
-                console.log(JSON.stringify(event));
+                const txt = _.reduce(event.data.ranking, (txt, v) => {
+                    return txt += `第${v.rank}名：${v.name}${v.rank != 4 ? '\n' : ''}`
+                }, '');
+                
+                this.handCompletedToastCloseHandle?.();
+                this.endedToastCloseHandle = toast(`遊戲結束。\n排名：\n${txt}`, this.view.center);
 
                 cb?.(undefined, undefined);
             });

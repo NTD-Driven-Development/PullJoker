@@ -1,4 +1,4 @@
-import { Point, Group, Rectangle, Color, Path } from 'paper/dist/paper-core';
+import { Point, Group, Rectangle, Path } from 'paper/dist/paper-core';
 import { Power2 } from 'gsap';
 import { Card } from '~/src/card';
 import type { Hand } from '~/src/hand';
