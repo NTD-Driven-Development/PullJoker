@@ -54,6 +54,7 @@ export class PullJoker extends Project {
         this.hands = new Map();
 
         const hand1 = new Hand();
+        hand1.beDraw = true;
         hand1.position = this.view.bounds.bottomCenter.add([0, -hand1.bounds.height / 2]);
 
         const hand2 = new Hand();

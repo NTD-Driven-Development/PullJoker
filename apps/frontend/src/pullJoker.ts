@@ -69,15 +69,12 @@ export class PullJoker extends Project {
                 if (this.isDealing || event.data.status == 'END')
                     return;
 
-                _.each(Array.from(this.hands.entries()), ([key, hand]) => {
-                    hand.beDraw = false;
-                });
-                
                 if (this.playerId == event.data.nextPlayer?.id) {
                     const hand = this.hands.get(event.data.currentPlayer?.id!)!;
 
                     hand.beDraw = true;
                     hand.onDrawed = (index) => {
+                        hand.beDraw = false;
                         this.socket.emit('draw-card', {
                             type: 'draw-card',
                             data: {
@@ -326,6 +323,11 @@ export class PullJoker extends Project {
                 
                 this.handCompletedToastCloseHandle?.();
                 this.endedToastCloseHandle = toast(`遊戲結束。\n排名：\n${txt}`, this.view.center);
+
+                const loserHand = this.hands.get(_.find(event.data.ranking, (v) => v.rank == 4)?.playerId!)!;
+                loserHand.cards[0].faceDown = false;
+                loserHand.cards[0].cardType = 5;
+                loserHand.cards[0].cardNo = 1;
 
                 cb?.(undefined, undefined);
             });

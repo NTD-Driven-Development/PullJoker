@@ -1,4 +1,4 @@
-import { Group, Path, Point, Rectangle } from 'paper/dist/paper-core';
+import { Color, Group, Path, Point, Rectangle } from 'paper/dist/paper-core';
 import { Power2 } from 'gsap';
 import { Card } from '~/src/card';
 import type { DiscardPile } from '~/src/discardPile';
@@ -59,24 +59,29 @@ export class Hand extends Group {
         _.each(this.playingAnimators, (v) => {
             v?.moveNext();
         });
-        
+
         this.cards.map((v, index) => {
             if (this.beDraw) {
+                v.shadowOffset = new Point([-1, -1]);
+                v.shadowColor = new Color(1, 0, 0, 0.5);
                 v.onMouseEnter = () => {
-                    v.position = v.position.add([0, -10]);
+                    v.fillColor = new Color(1, 0, 0, 0.3);
                 }
                 v.onMouseLeave = () => {
-                    v.position = v.position.add([0, 10]);
+                    v.fillColor = null;
                 }
                 v.onClick = () => {
-                    v.position = v.position.add([0, 10]);
                     this.onDrawed?.(index);
                 }
             }
             else {
+                v.shadowOffset = new Point([0, 0]);
+                v.shadowColor = null;
                 v.onMouseEnter = null;
                 v.onMouseLeave = null;
                 v.onClick = null;
+
+                v.fillColor = null;
             }
         });
     }
