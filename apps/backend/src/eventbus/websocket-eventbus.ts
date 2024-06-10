@@ -26,10 +26,10 @@ export class WebSocketEventBus implements EventBus {
         this.server = server
     }
 
-    public broadcast(events: DomainEvent[]) {
-        events.forEach((event) => {
-            this.handle(event)
-        })
+    public async broadcast(events: DomainEvent[]) {
+        for await (const event of events) {
+            await this.handle(event)
+        }
     }
 
     private async handle(event: DomainEvent) {
