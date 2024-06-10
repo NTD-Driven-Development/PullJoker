@@ -361,15 +361,26 @@ export class Game extends AggregateRoot<GameId> {
 
     private checkGameIsOver() {
         if (this.finishedPlayers.length === Game.MAX_PLAYERS - 1) {
+            const ranking = this.finishedPlayers.map((player, index) => {
+                return {
+                    playerId: player.id,
+                    name: player.name,
+                    rank: index + 1,
+                }
+            })
+            const lastPlayer = this.players.find(
+                (player) => !this.finishedPlayers.some((p) => p.id === player.getId()),
+            )
+            ranking.push({
+                playerId: lastPlayer?.getId() || '',
+                name: lastPlayer?.name || '',
+                rank: Game.MAX_PLAYERS,
+            })
             this.apply(
                 new GameEnded({
                     id: this.id,
                     status: 'END',
-                    ranking: this.players.map((player, index) => ({
-                        playerId: this.finishedPlayers[index]?.id || player.getId(),
-                        name: this.finishedPlayers[index]?.name || player.name,
-                        rank: index + 1,
-                    })),
+                    ranking,
                 }),
             )
         }

@@ -66,7 +66,16 @@ describe('e2e on game-controller', () => {
 
         clientA.once('get-game-result', async (event) => {
             console.log('get-game-result', event)
-            const a = event.data.players?.reduce((acc, player) => acc + player.hands.cardCount, 0)
+            const a = event.data.players?.reduce(
+                (acc, player) =>
+                    acc +
+                    (
+                        player.hands as {
+                            cardCount: number
+                        }
+                    ).cardCount,
+                0,
+            )
             expect(a).toBe(53 - count * 2)
         })
         await Promise.all([
@@ -149,7 +158,7 @@ function cardDrawn(to: Client, gameId: any, from: Client, cardIndex: number = 0)
     })
 }
 
-function cardDrawnWithOtherPlayer(other: Client): Promise<number> {
+function cardDrawnWithOtherPlayer(other: Client): Promise<boolean> {
     return new Promise((resolve) => {
         other.once('card-drawn', (event) => {
             expect(event.data.card).toBe(undefined)
