@@ -17,7 +17,6 @@ export class PullJoker extends Project {
     playerName: string;
     socket: Client;
     game?: GetGameResultEventSchema['data'];
-    isStarted: boolean = false;
     isDealing: boolean = false;
     hands: Map<string, Hand>;
     deck?: Deck;
@@ -37,9 +36,6 @@ export class PullJoker extends Project {
         else {
             this.view.scale(0.5);
         }
-
-        console.log(playerName);
-        
 
         this.gameId = gameId;
         this.playerId = playerId;
