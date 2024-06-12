@@ -9,8 +9,6 @@ import type { GetGameResultEventSchema } from '@packages/domain';
 import Queue from 'queue';
 import _ from 'lodash';
 
-const SOCKET_HOST = 'localhost:3002';
-
 export class PullJoker extends Project {
     gameId: string;
     playerId: string;
@@ -43,7 +41,9 @@ export class PullJoker extends Project {
         this.discardPile = new DiscardPile(this.view.bounds.center);
         this.hands = new Map();
 
-        const socket: Client = io(SOCKET_HOST, {
+        const config = useRuntimeConfig();
+
+        const socket: Client = io(config.public.BACKEND_URL, {
 			reconnectionDelayMax: 0,
 			reconnectionDelay: 0,
 			forceNew: true,
