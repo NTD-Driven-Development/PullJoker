@@ -52,3 +52,7 @@ yarn-error.log*
 
 # astah
 **/*.asta.lock
+
+# ssl
+*.crt
+*.key
