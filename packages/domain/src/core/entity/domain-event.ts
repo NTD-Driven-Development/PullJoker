@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { v4 as uuidv4 } from 'uuid'
 
 export abstract class DomainEvent {
     private readonly id: string
     private readonly occurredOn: Date
+    protected version: number = 1
     public readonly type: string
+    public readonly data: any
 
     constructor(type: string, occurredOn: Date) {
         this.id = uuidv4()
@@ -21,5 +24,17 @@ export abstract class DomainEvent {
 
     public getType(): string {
         return this.type
+    }
+
+    public getData(): any {
+        return this.data
+    }
+
+    public setVersion(version: number): void {
+        this.version = version
+    }
+
+    public getVersion(): number {
+        return this.version
     }
 }

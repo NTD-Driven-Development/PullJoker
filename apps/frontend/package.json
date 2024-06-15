@@ -10,6 +10,8 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@packages/domain": "file:../../packages/domain",
+    "@packages/socket": "file:../../packages/socket",
     "@pinia/nuxt": "^0.5.1",
     "@types/greensock": "^1.15.32",
     "axios": "^1.6.8",
@@ -17,15 +19,16 @@
     "nuxt": "^3.11.2",
     "paper": "^0.12.17",
     "pinia": "^2.1.7",
+    "queue": "^7.0.0",
     "socket.io-client": "^4.7.5",
     "vue": "^3.4.21",
+    "tailwindcss": "^3.4.3",
     "vue-router": "^4.3.0"
   },
   "devDependencies": {
     "@iconify/vue": "^4.1.2",
     "@types/lodash": "^4.17.0",
     "autoprefixer": "^10.4.19",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.3"
+    "postcss": "^8.4.38"
   }
 }

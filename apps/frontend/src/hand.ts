@@ -6,7 +6,9 @@ import _ from 'lodash';
 
 // 手牌
 export class Hand extends Group {
+    beDraw: boolean = false;
     cards: Card[] = [];
+    onDrawed?: (idx: number) => void;
     private drawingAnimators: DrawingAnimator[] = [];
     private playingAnimators: PlayingAnimator[] = [];
 
@@ -16,36 +18,35 @@ export class Hand extends Group {
         this.applyMatrix = false;
 
         const border = new Path.Rectangle(new Rectangle(0, 0, 600, 200));
-        border.strokeColor = new Color(1, 0, 0);
+        // border.strokeColor = new Color(1, 0, 0);
         this.addChild(border);
 
         this.onFrame = this.frame;
     }
 
     // 抽牌
-    drawCard = async (hand: Hand, idxs: number[], events?: DrawingEvents) => new Promise((resolve, reject) => {
+    drawCard = async (hand: Hand, idxs: number[], events?: DrawingEvents) => new Promise<Card[]>((resolve, reject) => {
         const animator = new DrawingAnimator(hand, this, idxs);
         
-        animator.onAnimated = async () => {
-            await events?.onAnimated?.();
-            
+        animator.onAnimated = async (cards) => {
+            events?.onAnimated?.(cards);
             _.remove(this.drawingAnimators, (v) => v == animator);
-            return resolve(true);
+            return resolve(cards);
         };
         animator.onCardAtCenter = async (cards) => {
-            await events?.onCardAtCenter?.(cards);
+            events?.onCardAtCenter?.(cards);
         }
 
         this.drawingAnimators.push(animator);
     });
 
     // 出牌至棄牌堆
-    play = async (discardPile: DiscardPile, idxs: number[]) => new Promise((resolve, reject) => {
+    play = async (discardPile: DiscardPile, idxs: number[]) => new Promise<Card[]>((resolve, reject) => {
         const animator = new PlayingAnimator(discardPile, this, idxs);
         
-        animator.onAnimated = () => {
+        animator.onAnimated = (cards) => {
             _.remove(this.playingAnimators, (v) => v == animator);
-            return resolve(true);
+            return resolve(cards);
         };
 
         this.playingAnimators.push(animator);
@@ -58,12 +59,37 @@ export class Hand extends Group {
         _.each(this.playingAnimators, (v) => {
             v?.moveNext();
         });
+
+        this.cards.map((v, index) => {
+            if (this.beDraw) {
+                v.shadowOffset = new Point([-1, -1]);
+                v.shadowColor = new Color(1, 0, 0, 0.5);
+                v.onMouseEnter = () => {
+                    v.fillColor = new Color(1, 0, 0, 0.3);
+                }
+                v.onMouseLeave = () => {
+                    v.fillColor = null;
+                }
+                v.onClick = () => {
+                    this.onDrawed?.(index);
+                }
+            }
+            else {
+                v.shadowOffset = new Point([0, 0]);
+                v.shadowColor = null;
+                v.onMouseEnter = null;
+                v.onMouseLeave = null;
+                v.onClick = null;
+
+                v.fillColor = null;
+            }
+        });
     }
 }
 
 interface DrawingEvents {
-    onCardAtCenter?: (cards: Card[]) => Promise<void>,
-    onAnimated?: () => Promise<void>,
+    onCardAtCenter?: (cards: Card[]) => void,
+    onAnimated?: (cards: Card[]) => void,
 }
 
 class DrawingAnimator implements DrawingEvents {
@@ -85,14 +111,14 @@ class DrawingAnimator implements DrawingEvents {
     private options: DrawingOptions;
 
     onCardAtCenter?: (cards: Card[]) => Promise<void>;
-    onAnimated?: () => Promise<void>;
+    onAnimated?: (cards: Card[]) => Promise<void>;
 
     constructor(fromHand: Hand, toHand: Hand, idx: number[], options?: Partial<DrawingOptions>) {
         this.fromHand = fromHand;
         this.toHand = toHand;
         this.cards = this.fromHand.cards?.filter((v, i) => Array.from(new Set(idx)).includes(i));
         this.checkPoint = this.toHand.localToGlobal(this.toHand.bounds.size.multiply(0.5));
-        this.options = _.defaults(options, { time: 3, standTime: 2 });
+        this.options = _.defaults(options, { time: 2, standTime: 1 });
     }
 
     moveNext = async () => {
@@ -100,7 +126,7 @@ class DrawingAnimator implements DrawingEvents {
             return;
         }
 
-        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).ceil().equals([0, 0])) {
+        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).isZero()) {
             this.calcSteps();
             this.calcDiffVector();
 
@@ -162,7 +188,7 @@ class DrawingAnimator implements DrawingEvents {
                     this.toHand.addChild(c.card);
                 });
 
-                this.onAnimated?.();
+                this.onAnimated?.(this.diffToVectorConfigs.map((v) => v.card));
             }
         }
     }
@@ -279,7 +305,7 @@ class PlayingAnimator {
     private diffReserveVectorConfigs: DiffConfig[] = [];
     private options: PlayingOptions;
 
-    onAnimated?: () => void;
+    onAnimated?: (cards: Card[]) => void;
 
     constructor(discardPile: DiscardPile, hand: Hand, idxs: number[], options?: Partial<PlayingOptions>) {
         this.discardPile = discardPile;
@@ -294,7 +320,7 @@ class PlayingAnimator {
             return;
         }
 
-        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).ceil().equals([0, 0])) {
+        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).isZero()) {
             this.calcSteps();
             this.calcDiffVector();
 
@@ -335,7 +361,7 @@ class PlayingAnimator {
                 this.discardPile.addChild(c.card);
             });
 
-            this.onAnimated?.();
+            this.onAnimated?.(this.diffConfigs.map((v) => v.card));
         }
     }
 

@@ -20,7 +20,12 @@
 	const game = ref<PullJoker>();
 
 	onMounted(() => {
-		game.value = new PullJoker(canvas.value!);
+		const route = useRoute();
+		const gameId = route.query.gameId as string ?? '';
+		const playerId = route.query.playerId as string ?? '';
+		const playerName = route.query.playerName as string ?? undefined;
+
+		game.value = new PullJoker(canvas.value!, gameId, playerId, playerName);
 
 		window.addEventListener('resize', resizeCanvas);
 		resizeCanvas();

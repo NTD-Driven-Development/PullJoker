@@ -15,4 +15,9 @@ export default defineNuxtConfig({
 	modules: [
 		'@pinia/nuxt',
     ],
+	runtimeConfig: {
+        public: {
+            'BACKEND_URL': process.env.NUXT_PUBLIC_BACKEND_URL,
+        }
+    },
 })

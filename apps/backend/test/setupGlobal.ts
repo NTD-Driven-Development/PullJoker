@@ -5,7 +5,7 @@ import 'tsconfig-paths/register'
 import { Config } from '@jest/types'
 
 declare global {
-    var SOCKET_URL: string
+    var SERVER_URL: string
 }
 
 export default async function (globalConfig: Config.GlobalConfig, projectConfig: Config.ProjectConfig) {
@@ -14,5 +14,5 @@ export default async function (globalConfig: Config.GlobalConfig, projectConfig:
         return
     }
     console.log('setup test server')
-    await require('../src/index')
+    require('../src/index')
 }

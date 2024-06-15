@@ -1,4 +1,4 @@
-import { Point, Group, Rectangle, Color, Path } from 'paper/dist/paper-core';
+import { Point, Group, Rectangle, Path } from 'paper/dist/paper-core';
 import { Power2 } from 'gsap';
 import { Card } from '~/src/card';
 import type { Hand } from '~/src/hand';
@@ -47,18 +47,37 @@ export class Deck extends Group {
         this.shufflingAnimators.push(animator);
     })
 
-    deal = async (hand: Hand) => new Promise((resolve, reject) => {
+    deal = async (hand: Hand) => new Promise<Card>((resolve, reject) => {
         if (!this.cards.length)
             throw '牌堆無可用卡牌';
 
         const animator = new DealingAnimator(hand, this, this.cards.length - 1);
-        animator.onAnimated = () => {
+        animator.onAnimated = (card) => {
             _.remove(this.dealingAnimators, (v) => v == animator);
-            return resolve(true);
+            return resolve(card);
         };
 
         this.dealingAnimators.push(animator);
     });
+
+    static make = async (position: paper.Point, count: number) => {
+        const deck = new Deck();
+        deck.position = position;
+
+        for (const type of _.range(count)) {
+            const count = deck.cards.length;
+
+            const card = new Card();
+            card.position = deck.bounds.center.add([count / 3, count / -1]);
+            card.cardType = 1;
+            card.cardNo = 1;
+            card.faceDown = true;
+            await deck.push(card, { time: 0.01 });
+            await new Promise((r) => setTimeout(r, 20));
+        }
+
+        return deck;
+    }
 
     static makeFullDeck = async (position: paper.Point) => {
         const deck = new Deck();
@@ -94,7 +113,7 @@ export class Deck extends Group {
     }
     
     private frame = () => {
-        this.strokeColor = new Color(1, 0, 0);
+        // this.strokeColor = new Color(1, 0, 0);
 
         _.each(this.pushingAnimators, (v) => {
             v?.moveNext();
@@ -135,7 +154,7 @@ class PushingAnimator {
             return;
         }
 
-        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).ceil().equals([0, 0])) {
+        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).isZero()) {
             this.calcSteps();
             this.calcDiffVector();
 
@@ -293,7 +312,7 @@ class DealingAnimator {
     private diffConfig?: DiffConfig;
     private options: DealingOptions;
 
-    onAnimated?: () => void;
+    onAnimated?: (card: Card) => void;
 
     constructor(hand: Hand, deck: Deck, idx: number, options?: DealingOptions) {
         this.hand = hand;
@@ -310,7 +329,8 @@ class DealingAnimator {
             return;
         }
 
-        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).ceil().equals([0, 0])) {
+        // !this.checkPoint.subtract(this.tempCheckPoint).isZero()
+        if (!this.tempCheckPoint || !this.checkPoint.subtract(this.tempCheckPoint).isZero()) {
             this.calcSteps();
             this.calcDiffVector();
 
@@ -336,7 +356,7 @@ class DealingAnimator {
             this.deck.cards.splice(this.deck.cards.findIndex((v) => v == this.card), 1);
 
             this.hand.addChild(this.card);
-            this.onAnimated?.();
+            this.onAnimated?.(this.card);
         }
     }
 

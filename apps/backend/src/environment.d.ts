@@ -6,12 +6,14 @@ declare global {
             NODE_HOST: string
             DB_TYPE: 'mongodb' | 'mariadb' | 'postgres' | 'mssql' | 'redis'
             DB_HOST: string
-            DB_PORT: number
+            DB_PORT: string
             DB_USER: string
             DB_PASSWORD: string
             DB_NAME: string
             AUTH0_DOMAIN: string
             AUTH0_AUDIENCE: string
+            FRONTEND_URL: string
+            LOBBY_BACKEND_URL: string
         }
     }
 }
