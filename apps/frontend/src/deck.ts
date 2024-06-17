@@ -179,7 +179,7 @@ class PushingAnimator {
     }
 
     private calcSteps = () => {
-        const steps = Math.round(this.options.time * 1000 / 16.66);
+        const steps = Math.round(this.options.time * 1000 / 33);
         const diffSteps = steps - (this.currentStep ?? 0);
 
         this.steps = [];
@@ -278,7 +278,7 @@ class ShufflingAnimator {
     }
 
     private calcSteps = () => {
-        const totalSteps = Math.round(this.options.time * 1000 / 16.66);
+        const totalSteps = Math.round(this.options.time * 1000 / 33);
         const diffForwardSteps = totalSteps / 2 - (this.currentForwardStep ?? 0);
         const diffBackSteps = totalSteps / 2 - (this.backSteps.length ?? 0);
 
@@ -361,7 +361,7 @@ class DealingAnimator {
     }
 
     private calcSteps = () => {
-        const steps = Math.round((this.options?.time ?? 1) * 1000 / 16.66);
+        const steps = Math.round((this.options?.time ?? 1) * 1000 / 33);
         const diffSteps = steps - (this.currentStep ?? 0);
 
         this.steps = [];

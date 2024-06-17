@@ -194,11 +194,11 @@ class DrawingAnimator implements DrawingEvents {
     }
 
     private calcSteps = () => {
-        const totalFromSteps = Math.round((this.options?.time! / 2) * 1000 / 16.66);
+        const totalFromSteps = Math.round((this.options?.time! / 2) * 1000 / 33);
         const diffFromSteps = totalFromSteps - (this.currentFromStep ?? 0);
-        const totalStandCenterSteps = Math.round((this.options?.standTime!) * 1000 / 16.66);
+        const totalStandCenterSteps = Math.round((this.options?.standTime!) * 1000 / 33);
         const diffStandCenterSteps = totalStandCenterSteps - (this.currentStandCenterStep ?? 0);
-        const totalToSteps = Math.round((this.options?.time! / 2) * 1000 / 16.66);
+        const totalToSteps = Math.round((this.options?.time! / 2) * 1000 / 33);
         const diffToSteps = totalToSteps - (this.currentToStep ?? 0);
 
         this.fromSteps = [];
@@ -366,7 +366,7 @@ class PlayingAnimator {
     }
 
     private calcSteps = () => {
-        const steps = Math.round((this.options?.time ?? 1) * 1000 / 16.66);
+        const steps = Math.round((this.options?.time ?? 1) * 1000 / 33);
         const diffSteps = steps - (this.currentStep ?? 0);
 
         this.steps = [];
