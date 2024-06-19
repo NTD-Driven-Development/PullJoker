@@ -57,5 +57,5 @@ yarn-error.log*
 *.crt
 *.key
 
-docker-compose.yml
+**/docker-compose.yml
 **/default.conf
