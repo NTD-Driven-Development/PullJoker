@@ -58,3 +58,4 @@ yarn-error.log*
 *.key
 
 docker-compose.yml
+**/default.conf
