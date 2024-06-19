@@ -141,18 +141,22 @@ export class PullJoker extends Project {
                 else if (players.length == 4) {
                     const hand1 = new Hand();
                     hand1.position = this.view.bounds.bottomCenter.add([0, -hand1.bounds.height / 2]);
+                    toast(`${players[0].name}`, this.view.bounds.bottomCenter.add([0, -hand1.bounds.height - 15]), { rotate: 0 });
 
                     const hand2 = new Hand();
                     hand2.position = this.view.bounds.leftCenter.add([hand1.bounds.height / 2, 0]);
                     hand2.rotate(90);
+                    toast(`${players[1].name}`, this.view.bounds.leftCenter.add([hand1.bounds.height + 15, 0]), { rotate: 90 });
 
                     const hand3 = new Hand();
                     hand3.position = this.view.bounds.topCenter.add([0, hand1.bounds.height / 2]);
                     hand3.rotate(180);
+                    toast(`${players[2].name}`, this.view.bounds.topCenter.add([0, hand1.bounds.height + 15]), { rotate: 180 });
 
                     const hand4 = new Hand();
                     hand4.position = this.view.bounds.rightCenter.add([-hand1.bounds.height / 2, 0]);
                     hand4.rotate(270);
+                    toast(`${players[3].name}`, this.view.bounds.rightCenter.add([-hand1.bounds.height - 15, 0]), { rotate: 270 });
                     
                     this.hands.set(players[0].id, hand1);
                     this.hands.set(players[1].id, hand2);

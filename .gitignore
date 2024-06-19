@@ -56,3 +56,5 @@ yarn-error.log*
 # ssl
 *.crt
 *.key
+
+docker-compose.yml

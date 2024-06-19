@@ -1,8 +1,8 @@
 import { Color, Group, Path, Point, PointText, Rectangle } from "paper/dist/paper-core";
 import _ from 'lodash';
 
-export const toast = (text: string, point: paper.PointLike, options?: { time?: number }): ToastCloseHandle => {
-    const opt = _.defaults(options, {});
+export const toast = (text: string, point: paper.PointLike, options?: { time?: number, rotate?: number }): ToastCloseHandle => {
+    const opt = _.defaults(options, { rotate: 0 });
 
     const group = new Group();
 
@@ -12,6 +12,8 @@ export const toast = (text: string, point: paper.PointLike, options?: { time?: n
         fontSize: '20',
         justification: 'center',
     });
+
+    pointText.rotate(opt.rotate);
 
     const border = new Path.Rectangle(new Rectangle([0, 0], pointText.bounds.size.add(25)));
     border.fillColor = new Color(1, 1, 1);
