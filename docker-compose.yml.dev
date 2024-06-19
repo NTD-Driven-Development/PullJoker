@@ -9,6 +9,9 @@ services:
       - ./apps/nginx:/var/www/
     ports:
       - "81:80"
+    depends_on:
+      - backend
+      - frontend
     networks:
       - docker
   db:
@@ -50,7 +53,7 @@ services:
     working_dir: /apps/frontend
     environment:
         NODE_ENV: production
-        NUXT_PUBLIC_BACKEND_URL: 'http://127.0.0.1:8081'
+        NUXT_PUBLIC_BACKEND_URL: 'http://127.0.0.1:81'
     volumes:
       - ./apps/frontend:/apps/frontend
       - ./packages/domain:/packages/domain
