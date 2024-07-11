@@ -4,7 +4,7 @@
 
 - Ensure you have installed docker (Windows users should install WSL)
 - node = 20.12.2
-- Typescript
+- npm package all installed (packages/**, app/\*\*)
 
 ## Quick Start
 
