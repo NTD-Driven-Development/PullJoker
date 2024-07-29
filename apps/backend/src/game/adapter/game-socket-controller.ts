@@ -1,4 +1,4 @@
-import { DrawCardEventSchema, GetGameEventSchema, JoinRoomEventSchema, StartGameEventSchema } from '@packages/domain'
+import { DrawCardEventSchema, JoinRoomEventSchema, StartGameEventSchema } from '@packages/domain'
 import { Server } from '@packages/socket'
 import { Socket } from 'socket.io'
 import { autoInjectable, inject } from 'tsyringe'
@@ -25,15 +25,6 @@ export class GameSocketController {
     ) {}
 
     @SocketThrow
-    public async getGame(event: GetGameEventSchema, user: Readonly<AuthUser>) {
-        const reuslt = await this.getGameUseCase.execute({ gameId: event.data.gameId, userId: user.id })
-        return {
-            type: reuslt.type as 'get-game-result',
-            data: reuslt.data,
-        }
-    }
-
-    @SocketThrow
     public async getMyStatus(user: Readonly<AuthUser>) {
         return {
             type: 'get-my-status-result' as const,
@@ -54,21 +45,24 @@ export class GameSocketController {
                 gameId: event.data.gameId,
             },
         }
-        return await this.joinRoomUseCase.execute({ gameId: event.data.gameId, playerId: user.id, playerName: user.name })
+        await this.joinRoomUseCase.execute({ gameId: event.data.gameId, playerId: user.id, playerName: user.name })
+        await this.getGameUseCase.execute({ gameId: event.data.gameId, userId: user.id })
     }
 
     @SocketThrow
     public async startGame(event: StartGameEventSchema, user: Readonly<AuthUser>) {
-        return await this.startGameUseCase.execute({ gameId: event.data.gameId, playerId: user.id })
+        await this.startGameUseCase.execute({ gameId: event.data.gameId, playerId: user.id })
+        await this.getGameUseCase.execute({ gameId: event.data.gameId, userId: user.id })
     }
 
     @SocketThrow
     public async drawCard(event: DrawCardEventSchema, user: Readonly<AuthUser>) {
-        return await this.drawCardUseCase.execute({
+        await this.drawCardUseCase.execute({
             gameId: event.data.gameId,
             fromPlayerId: event.data.fromPlayerId,
             toPlayerId: user.id,
             cardIndex: event.data.cardIndex,
         })
+        await this.getGameUseCase.execute({ gameId: event.data.gameId, userId: user.id })
     }
 }

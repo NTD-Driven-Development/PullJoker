@@ -40,9 +40,9 @@ describe('e2e on game-controller', () => {
         await joinRoom(clientB, gameId)
         await joinRoom(clientC, gameId)
         await joinRoom(clientD, gameId)
-        let count = 0
-        clientA.on('card-played', (event) => {
-            count++
+        let cardPlayedCounts = 0
+        clientA.on('card-played', () => {
+            cardPlayedCounts++
         })
         await Promise.all([
             // Client D starts the game,
@@ -64,20 +64,8 @@ describe('e2e on game-controller', () => {
             cardPlayed(clientD, gameId),
         ])
 
-        clientA.once('get-game-result', async (event) => {
-            console.log('get-game-result', event)
-            const a = event.data.players?.reduce(
-                (acc, player) =>
-                    acc +
-                    (
-                        player.hands as {
-                            cardCount: number
-                        }
-                    ).cardCount,
-                0,
-            )
-            expect(a).toBe(53 - count * 2)
-        })
+        assertDeckCardsEqualsPlayersCardPlayed(clientA, cardPlayedCounts)
+
         await Promise.all([
             // B draws a card from A
             cardDrawn(clientB, gameId, clientA),
@@ -85,11 +73,9 @@ describe('e2e on game-controller', () => {
         ])
 
         await new Promise((resolve) => setTimeout(resolve, 500))
-        const players = [clientB, clientC, clientD, clientA]
-        const finishedPlayers: string[] = []
-        let currentPlayer = clientB
-        let nextPlayer: Client = clientC
+
         let rank = 1
+        const finishedPlayers: string[] = []
         clientA.on('hands-completed', (event) => {
             expect(event.data.ranking).toBe(rank)
             rank++
@@ -98,6 +84,10 @@ describe('e2e on game-controller', () => {
         clientA.once('game-ended', (event) => {
             expect(event.data.ranking.length).toBe(4)
         })
+
+        const players = [clientB, clientC, clientD, clientA]
+        let currentPlayer = clientB
+        let nextPlayer: Client = clientC
         while (true) {
             const playerCount = players.length
             const cp = currentPlayer
@@ -105,6 +95,11 @@ describe('e2e on game-controller', () => {
             const other = players.filter((player) => player !== cp && player !== np)[0]
 
             await Promise.all([
+                // All Player must be Get Server Pushed New Game Status
+                getGameStatus(clientA, cp, np),
+                getGameStatus(clientB, cp, np),
+                getGameStatus(clientC, cp, np),
+                getGameStatus(clientD, cp, np),
                 // C draws a card from B
                 cardDrawn(np, gameId, cp),
                 [cardDrawnToPlayer(np, cp), cardDrawnFromPlayer(cp, np)],
@@ -121,6 +116,43 @@ describe('e2e on game-controller', () => {
         }
     })
 })
+
+function getGameStatus(client: Client, cp: Client, np: Client) {
+    return new Promise((resolve) => {
+        client.once('get-game-result', (event) => {
+            expect(event.data.currentPlayer).not.toEqual(cp)
+            expect(event.data.nextPlayer).not.toEqual(np)
+            event.data.players.forEach((player) => {
+                if (player.id === (client.auth as { [key: string]: any }).id) {
+                    expect(player.hands?.cards).toBeTruthy()
+                } else {
+                    expect(player.hands?.cards).toBeFalsy()
+                }
+            })
+            resolve(true)
+        })
+    })
+}
+
+function assertDeckCardsEqualsPlayersCardPlayed(clientA: Client, count: number) {
+    return new Promise((resolve) => {
+        clientA.once('get-game-result', async (event) => {
+            console.log('get-game-result', event)
+            const a = event.data.players?.reduce(
+                (acc, player) =>
+                    acc +
+                    (
+                        player.hands as {
+                            cardCount: number
+                        }
+                    ).cardCount,
+                0,
+            )
+            expect(a).toBe(53 - count * 2)
+            resolve(true)
+        })
+    })
+}
 
 function toCurrentPlayer(originCurrent: Client, players: Client[], playerCount: number, finishedPlayers: string[]) {
     const beforeCurrent = players.findIndex(
