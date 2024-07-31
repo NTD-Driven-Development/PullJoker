@@ -9,7 +9,7 @@
         "start": "cross-env NODE_ENV=production node dist/index",
         "dev": "cross-env NODE_ENV=development ts-node-dev -r tsconfig-paths/register --project .  --respawn src/index.ts",
         "format": "prettier --no-error-on-unmatched-pattern --write \"src/**/*.ts\" \"test/**/*.ts\"",
-        "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint \"{src,apps,libs,test}/**/*.ts\"",
+        "lint": "eslint --fix --cache --cache-location ./node_modules/.cache/eslint \"{src,apps,libs,test}/**/*.ts\"",
         "typecheck": "tsc --noEmit",
         "test:e2e": "cross-env NODE_ENV=test jest --forceExit --logHeapUsage --runInBand --verbose --silent=false --testMatch=\"**/*-controller.test.ts\""
     },

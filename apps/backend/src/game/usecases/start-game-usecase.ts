@@ -1,4 +1,4 @@
-import { GetGameResult, StartGameCommandSchema, UseCase } from '@packages/domain'
+import { StartGameCommandSchema, UseCase } from '@packages/domain'
 import { autoInjectable, inject } from 'tsyringe'
 import { Retryable } from 'typescript-retry-decorator'
 import { EventBus, WebSocketEventBus } from '~/eventbus'
@@ -31,46 +31,5 @@ export class StartGameUseCase implements UseCase<StartGameInput, void> {
         await this.gameRepository.save(game, version)
         const events = game.getDomainEvents()
         this.eventBus.broadcast(events)
-        const afterGame = await this.gameRepository.from(input.gameId)
-        this.eventBus.broadcast([
-            new GetGameResult({
-                id: afterGame.getId(),
-                status: afterGame.getGameStatus(),
-                round: afterGame.round,
-                players: afterGame.players.map((player) => {
-                    return {
-                        id: player.getId(),
-                        name: player.name,
-                        hands:
-                            afterGame.getGameStatus() === 'WAITING'
-                                ? null
-                                : {
-                                      cards: player.getHands()?.getCards(),
-                                      cardCount: player.getHands()?.getCards()?.length || 0,
-                                  },
-                    }
-                }),
-                deck:
-                    afterGame.getGameStatus() === 'WAITING'
-                        ? null
-                        : {
-                              cards: afterGame.deck ? afterGame.deck.getCards() : [],
-                          },
-                currentPlayer:
-                    afterGame.getGameStatus() === 'WAITING'
-                        ? null
-                        : {
-                              id: afterGame.currentPlayer?.getId() || '',
-                              name: afterGame.currentPlayer?.name || '',
-                          },
-                nextPlayer:
-                    afterGame.getGameStatus() === 'WAITING'
-                        ? null
-                        : {
-                              id: afterGame.nextPlayer?.getId() || '',
-                              name: afterGame.nextPlayer?.name || '',
-                          },
-            }),
-        ])
     }
 }
